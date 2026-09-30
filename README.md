@@ -18,6 +18,13 @@ docker compose up -d --build   # http://localhost:3000
 The first start downloads the ~1 GB model into the `llm-models` volume; until it's ready, answers are quoted from the
 document instead of AI-worded. A `.env` file is optional (see `.env.example`).
 
+The app container runs as the unprivileged `verity` user (uid 10001, no capabilities, `no-new-privileges`) and keeps its
+database and signing key in the `verity-data` volume. To reset the demo data without re-downloading the model:
+
+```bash
+docker compose rm -sf app && docker volume rm verity_verity-data && docker compose up -d app
+```
+
 **Local dev** (Python 3.12 via uv, Node 22):
 
 ```bash

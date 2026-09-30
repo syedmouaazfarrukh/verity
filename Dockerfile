@@ -15,8 +15,11 @@ RUN pip install --no-cache-dir -r api/requirements.txt
 COPY api/ api/
 COPY seed/ seed/
 COPY --from=web /web/dist web/dist
-RUN useradd --system --uid 10001 --no-create-home verity && mkdir -p /app/data
+# Unprivileged user owns only the data dir; the code stays root-owned and read-only to it.
+# /app/data is a named volume in docker-compose.yml, which inherits this ownership on first use.
+RUN useradd --system --uid 10001 --no-create-home verity \
+ && mkdir -p /app/data && chown verity:verity /app/data
 WORKDIR /app/api
+USER verity
 EXPOSE 3000
-# Fix ownership of the (possibly bind-mounted) data dir, then drop root.
-CMD ["sh", "-c", "chown -R verity /app/data && exec setpriv --reuid=verity --regid=verity --init-groups uvicorn main:app --host 0.0.0.0 --port ${PORT:-3000}"]
+CMD ["sh", "-c", "exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-3000}"]

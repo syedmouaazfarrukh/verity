@@ -53,7 +53,7 @@ The plan lives in [`CONTRACT.md`](../CONTRACT.md) (v1, then a v2 addendum). Stat
 | 14 | Consultants can't silently publish over a live rule; "updated by" = real uploader | Built (fix) | `api/ingest.py`, `api/checks.py` |
 | 15 | Real connectors (Gmail, Slack, GitHub, Notion, SharePoint, Drive, Teams) | **Not built**: shown as "Coming soon" on the dashboard; documents carry an origin label from front-matter | brief: "Many sources, one door" |
 | 16 | PDF / image upload | **Not built** (only `.md`, `.txt`) | `api/main.py` `ALLOWED_EXTENSIONS` |
-| 17 | Aikido scan + fixes | **Pending** (repo connected next). Pre-checks done: `npm audit` 0, `pip-audit` 0 | §6 |
+| 17 | Aikido scan + fixes | Done: 1 real finding (Docker root) fixed; SQL injection, nanoid and file-inclusion findings assessed as false positives with evidence. `npm audit` 0, `pip-audit` 0 | §6 |
 | 18 | Cloud deployment | **Pending** (target not chosen) | |
 | 19 | Audit-log screen | **Not built** (API `/api/audit` exists, owner/admin only) | |
 | 20 | Ask as a centred, T3-style home; conversation thread; no topic grid on home | Built (v3) | `web/src/pages/ask.tsx` |
@@ -69,7 +69,7 @@ The plan lives in [`CONTRACT.md`](../CONTRACT.md) (v1, then a v2 addendum). Stat
 Browser ──HTTP :3000──► app container (python:3.12-slim, non-root)
                          ├─ FastAPI  /api/*   (api/)
                          ├─ serves the built React app at /   (web/dist)
-                         └─ SQLite   data/verity.db (bind mount ./data)
+                         └─ SQLite   /app/data/verity.db (named volume verity-data)
                                  │
                                  └─HTTP (internal network only)──► llm container (ollama/ollama:0.5.7)
                                                                    qwen2.5:1.5b-instruct, no host port
@@ -195,7 +195,7 @@ Dashboard, Upload, Review queue with open count, Graph). Light and dark themes.
 | No stack traces to clients; JSON 404 for unknown API routes | `main.py` | `test_unknown_api_route_is_json_404` |
 | Open-redirect-safe login `next` (rejects `//`, `\`, control chars, other origins) | `web/src/lib/auth.tsx` `safeNext` | manual cases (commit `1ad2588`) |
 | On-premise AI: `llm` has no host port; the prompt only contains the one in-scope document's facts | `docker-compose.yml`, `chat.py` | compose file; `test_openai_compatible_provider` |
-| App container runs as non-root (`setpriv` to uid 10001) | `Dockerfile` | |
+| App container runs as non-root: `USER verity` (uid 10001), `cap_drop: ALL`, `no-new-privileges`; code read-only to the app user; data in a named volume | `Dockerfile`, `docker-compose.yml` | Aikido IaC finding resolved |
 | Dependencies: `npm audit` → 0 vulnerabilities; `pip-audit` → none known | `web/package.json`, `api/requirements.txt` | §9 |
 | No secrets in the repo: `.env` git-ignored, `.env.example` only, signing key generated at runtime in `data/` (ignored) | `.gitignore` | |
 

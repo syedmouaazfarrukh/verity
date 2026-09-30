@@ -15,7 +15,12 @@ services:
       LLM_MODEL: ${LLM_MODEL:-qwen2.5:1.5b-instruct}
       LLM_TIMEOUT: ${LLM_TIMEOUT:-30}
     volumes:
-      - ./data:/app/data
+      - verity-data:/app/data
+    # Runs as the unprivileged `verity` user (see Dockerfile); no extra kernel capabilities needed.
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     depends_on:
       llm:
         condition: service_started
@@ -46,4 +51,5 @@ services:
     restart: unless-stopped
 
 volumes:
+  verity-data:
   llm-models:

@@ -640,7 +640,10 @@ def spa(full_path: str):
     dist = web_dist()
     if dist is None:
         return JSONResponse({"detail": "Web app not built. Run `npm run build` in web/ or use the Vite dev server."}, status_code=404)
-    candidate = (dist / full_path).resolve()
-    if full_path and candidate.is_file() and candidate.is_relative_to(dist):
+    try:
+        candidate = (dist / full_path).resolve()
+    except (ValueError, OSError):  # e.g. an encoded NUL byte in the path: just serve the app
+        candidate = None
+    if full_path and candidate and candidate.is_file() and candidate.is_relative_to(dist):
         return FileResponse(candidate)
     return FileResponse(dist / "index.html", headers={"Cache-Control": "no-cache"})
