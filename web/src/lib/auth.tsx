@@ -70,6 +70,14 @@ export function canResolve(user: User): boolean {
 /** Only allow same-origin relative paths as a post-login destination. */
 export function safeNext(next: string | null): string {
   if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/login")) return "/";
+  // Browsers treat "\" like "/" ("/\evil.com" -> "//evil.com"), and control characters can hide one.
+  if (/[\\\u0000-\u001f\u007f]/.test(next)) return "/";
+  // Final check: it must resolve to this origin.
+  try {
+    if (new URL(next, window.location.origin).origin !== window.location.origin) return "/";
+  } catch {
+    return "/";
+  }
   return next;
 }
 
