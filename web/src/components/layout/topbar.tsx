@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { VerityLogo } from "@/components/verity/logo";
+import { VerityLogo, VerityWordmark } from "@/components/verity/logo";
 import { DepartmentChip, departmentLabel } from "@/components/verity/badges";
 import { api } from "@/lib/api";
 import { useAuth, useUser } from "@/lib/auth";
@@ -38,9 +38,9 @@ export function Topbar() {
       <div className="flex items-center gap-2.5">
         <VerityLogo className="h-7 w-7" />
         <div className="flex flex-col leading-none">
-          <span className="font-semibold text-lg tracking-tight leading-none">Verity</span>
+          <VerityWordmark className="text-[25px]" />
         </div>
-        <span className="hidden lg:inline text-xs font-normal text-muted-foreground ml-1">
+        <span className="hidden xl:inline text-xs font-normal text-muted-foreground ml-3 border-l border-border pl-4">
           One subject. One source. Always the latest.
         </span>
       </div>

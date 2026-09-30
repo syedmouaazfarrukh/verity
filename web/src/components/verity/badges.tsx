@@ -29,7 +29,7 @@ export function LevelBadge({ level, className }: { level: Level; className?: str
   return (
     <Badge
       variant={LEVEL_VARIANT[level] ?? "unknown"}
-      className={cn("capitalize", level === "critical" && "bg-danger text-white border-transparent", className)}
+      className={cn("capitalize", level === "critical" && "bg-danger-foreground text-white dark:bg-danger dark:text-zinc-950 border-transparent", className)}
     >
       {level}
     </Badge>

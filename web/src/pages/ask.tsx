@@ -1,5 +1,5 @@
 import * as React from "react";
-import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
+import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import { ArrowUp, Loader2, SquarePen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -60,6 +60,7 @@ function useSessionThread(username: string) {
 
 export function AskPage() {
   const user = useUser();
+  const reducedMotion = useReducedMotion();
   const firstName = user.display_name.split(" ")[0];
   const examples = examplesFor(user.departments);
   const [turns, setTurns] = useSessionThread(user.username);
@@ -113,8 +114,8 @@ export function AskPage() {
   React.useEffect(() => {
     if (!lastId) return;
     const el = document.getElementById(`turn-${lastId}`);
-    el?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [lastId]);
+    el?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
+  }, [lastId, reducedMotion]);
 
   const composer = (
     <Composer

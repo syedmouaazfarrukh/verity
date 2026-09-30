@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   ArrowRight,
   BadgeCheck,
@@ -187,6 +187,7 @@ export function AnswerBlock({
   /** DOM id of the details panel; must be unique when several answers are on screen (Ask thread). */
   detailsId?: string;
 }) {
+  const reducedMotion = useReducedMotion();
   const doc = answer.document;
   const verify = useReceiptVerification(answer.receipt?.id);
   const alternatives = answer.alternatives ?? [];
@@ -197,11 +198,11 @@ export function AnswerBlock({
   React.useEffect(() => {
     if (!detailsOpen || !hasDetails) return;
     const t = window.setTimeout(
-      () => document.getElementById(detailsId)?.scrollIntoView({ behavior: "smooth", block: "start" }),
-      320
+      () => document.getElementById(detailsId)?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" }),
+      reducedMotion ? 0 : 320
     );
     return () => window.clearTimeout(t);
-  }, [detailsOpen, hasDetails, detailsId]);
+  }, [detailsOpen, hasDetails, detailsId, reducedMotion]);
 
   const blockedAlts = alternatives.filter((a) => a.status === "blocked").length;
   const quotes = answer.quotes ?? [];
@@ -307,7 +308,7 @@ export function AnswerBlock({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: EASE_OUT }}
+            transition={{ duration: reducedMotion ? 0 : 0.3, ease: EASE_OUT }}
             onAnimationStart={() => setSettled(false)}
             onAnimationComplete={() => setSettled(detailsOpen)}
             style={{ overflow: settled ? "visible" : "hidden" }}

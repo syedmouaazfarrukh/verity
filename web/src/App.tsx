@@ -1,3 +1,4 @@
+import { MotionConfig } from "framer-motion";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "sonner";
@@ -15,6 +16,7 @@ import { GraphPage } from "@/pages/graph";
 
 export function App() {
   return (
+    <MotionConfig reducedMotion="user">
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <TooltipProvider delayDuration={150}>
         <BrowserRouter>
@@ -51,5 +53,6 @@ export function App() {
         />
       </TooltipProvider>
     </ThemeProvider>
+    </MotionConfig>
   );
 }

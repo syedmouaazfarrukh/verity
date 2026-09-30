@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useReducedMotion } from "framer-motion";
 import cytoscape, { type Core, type EventObject, type NodeSingular } from "cytoscape";
 import { useTheme } from "next-themes";
 import { answerGraphStylesheet } from "@/components/graph/node-styles";
@@ -115,6 +116,7 @@ export function AnswerGraph({ data, highlightId, onHoverNode, onOpenNode }: Prop
   openRef.current = onOpenNode;
   const { resolvedTheme } = useTheme();
   const dark = resolvedTheme === "dark";
+  const reducedMotion = !!useReducedMotion();
   const [focused, setFocused] = React.useState(false);
 
   const sourceId = React.useMemo(() => data.nodes.find((n) => n.role === "source")?.id ?? null, [data]);
@@ -131,7 +133,7 @@ export function AnswerGraph({ data, highlightId, onHoverNode, onOpenNode }: Prop
         ...data.nodes.map((n) => ({ group: "nodes" as const, data: { ...n } })),
         ...edges.map((e) => ({ group: "edges" as const, data: { ...e } })),
       ],
-      style: answerGraphStylesheet({ dark }) as never,
+      style: answerGraphStylesheet({ dark, reducedMotion }) as never,
       minZoom: 0.4,
       maxZoom: 1.6,
       boxSelectionEnabled: false,
@@ -155,7 +157,7 @@ export function AnswerGraph({ data, highlightId, onHoverNode, onOpenNode }: Prop
 
     // Let the reader see the whole answer graph for a beat, then focus it.
     setFocused(false);
-    const t = window.setTimeout(() => setFocused(true), 450);
+    const t = window.setTimeout(() => setFocused(true), reducedMotion ? 0 : 450);
     return () => {
       window.clearTimeout(t);
       ro.disconnect();
@@ -167,8 +169,8 @@ export function AnswerGraph({ data, highlightId, onHoverNode, onOpenNode }: Prop
   }, [data, sourceId]);
 
   React.useEffect(() => {
-    cyRef.current?.style(answerGraphStylesheet({ dark }) as never).update();
-  }, [dark]);
+    cyRef.current?.style(answerGraphStylesheet({ dark, reducedMotion }) as never).update();
+  }, [dark, reducedMotion]);
 
   // Source focus: source + its direct path at full strength, everything else muted.
   React.useEffect(() => {

@@ -1,5 +1,8 @@
 import * as React from "react";
 import cytoscape, { type Core, type EventObject, type NodeSingular, type EdgeSingular } from "cytoscape";
+import { useReducedMotion } from "framer-motion";
+import { Maximize, Minus, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import coseBilkent from "cytoscape-cose-bilkent";
 import { useTheme } from "next-themes";
 import { nodeStylesheet } from "@/components/graph/node-styles";
@@ -23,13 +26,27 @@ export function CytoscapeGraph({ data, selectedId, onSelectNode, variant = "deta
   onSelectRef.current = onSelectNode;
   const { resolvedTheme } = useTheme();
   const dark = resolvedTheme === "dark";
+  const reducedMotion = !!useReducedMotion();
+
+  function fitGraph() {
+    const cy = cyRef.current;
+    if (!cy) return;
+    cy.fit(undefined, 48);
+    if (cy.zoom() > 1.1) { cy.zoom(1.1); cy.center(); }
+  }
+
+  function zoomBy(factor: number) {
+    const cy = cyRef.current;
+    if (!cy) return;
+    cy.zoom({ level: Math.max(cy.minZoom(), Math.min(cy.maxZoom(), cy.zoom() * factor)), renderedPosition: { x: cy.width() / 2, y: cy.height() / 2 } });
+  }
 
   React.useEffect(() => {
     if (!containerRef.current) return;
     const cy = cytoscape({
       container: containerRef.current,
       elements: [],
-      style: nodeStylesheet({ dark }) as never,
+      style: nodeStylesheet({ dark, reducedMotion }) as never,
       minZoom: 0.2,
       maxZoom: 2.5,
       boxSelectionEnabled: false,
@@ -50,7 +67,10 @@ export function CytoscapeGraph({ data, selectedId, onSelectNode, variant = "deta
     cy.on("mouseover", "edge", (evt: EventObject) => (evt.target as EdgeSingular).addClass("hover"));
     cy.on("mouseout", "edge", (evt: EventObject) => (evt.target as EdgeSingular).removeClass("hover"));
     cyRef.current = cy;
+    const observer = new ResizeObserver(() => { cy.resize(); });
+    observer.observe(el);
     return () => {
+      observer.disconnect();
       cy.destroy();
       cyRef.current = null;
     };
@@ -82,15 +102,31 @@ export function CytoscapeGraph({ data, selectedId, onSelectNode, variant = "deta
     });
 
     if (firstMount && data.nodes.length > 0) {
-      cy.layout({
+      if (variant === "map") {
+        // Stable topic orbit keeps labels readable and refreshes visually predictable.
+        const topics = cy.nodes().filter((node) => node.data("type") === "topic");
+        const context = cy.nodes().filter((node) => node.data("type") !== "topic");
+        const radiusX = Math.max(300, topics.length * 50);
+        const radiusY = Math.max(160, topics.length * 26);
+        topics.forEach((node, index) => {
+          const angle = -Math.PI / 2 + (index * Math.PI * 2) / topics.length;
+          node.position({ x: Math.cos(angle) * radiusX, y: Math.sin(angle) * radiusY });
+        });
+        const columns = Math.min(3, context.length);
+        context.forEach((node, index) => { node.position({
+          x: ((index % columns) - (columns - 1) / 2) * 105,
+          y: (Math.floor(index / columns) - (Math.ceil(context.length / columns) - 1) / 2) * 85,
+        }); });
+        cy.layout({ name: "preset", fit: true, padding: 48 }).run();
+      } else cy.layout({
         name: "cose-bilkent",
-        idealEdgeLength: variant === "map" ? 130 : 120,
-        nodeRepulsion: variant === "map" ? 14000 : 12000,
+        idealEdgeLength: 120,
+        nodeRepulsion: 12000,
         randomize: true,
         nodeDimensionsIncludeLabels: true,
         animate: false,
         fit: true,
-        padding: 80,
+        padding: 48,
       } as cytoscape.LayoutOptions).run();
       // Small graphs get over-zoomed by fit; cap it so labels stay readable.
       if (cy.zoom() > 1.1) {
@@ -102,8 +138,8 @@ export function CytoscapeGraph({ data, selectedId, onSelectNode, variant = "deta
   }, [data]);
 
   React.useEffect(() => {
-    cyRef.current?.style(nodeStylesheet({ dark }) as never).update();
-  }, [dark]);
+    cyRef.current?.style(nodeStylesheet({ dark, reducedMotion }) as never).update();
+  }, [dark, reducedMotion]);
 
   // Highlight the selected node's neighbourhood.
   React.useEffect(() => {
@@ -130,11 +166,13 @@ export function CytoscapeGraph({ data, selectedId, onSelectNode, variant = "deta
   }, []);
 
   return (
-    <div
-      ref={containerRef}
-      className="absolute inset-0"
-      role="application"
-      aria-label={`Knowledge graph: ${data.nodes.length} nodes, ${data.edges.length} relationships`}
-    />
+    <>
+      <div ref={containerRef} className="absolute inset-x-0 top-28 bottom-24" role="img" aria-label={`Knowledge graph: ${data.nodes.length} nodes, ${data.edges.length} relationships. Use the node picker to explore with a keyboard.`} />
+      <div className="absolute bottom-5 right-5 z-10 flex items-center gap-1 rounded-xl border border-border bg-card p-1 shadow-sm" role="group" aria-label="Graph view controls">
+        <Button variant="ghost" size="icon" onClick={() => zoomBy(1 / 1.2)} aria-label="Zoom out"><Minus className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="icon" onClick={fitGraph} aria-label="Fit graph to view"><Maximize className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="icon" onClick={() => zoomBy(1.2)} aria-label="Zoom in"><Plus className="h-4 w-4" /></Button>
+      </div>
+    </>
   );
 }

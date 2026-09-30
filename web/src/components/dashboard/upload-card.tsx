@@ -89,6 +89,7 @@ export function UploadSourceCard({
       <input
         ref={inputRef}
         type="file"
+        aria-label="Upload a document"
         accept={UPLOAD_ACCEPT}
         className="sr-only"
         tabIndex={-1}

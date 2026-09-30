@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, ChevronRight, Network, RefreshCw, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -121,6 +121,8 @@ export function GraphPage() {
             loading={state.loading}
             onBack={() => setParams({})}
             onRefresh={state.reload}
+            selectedId={selectedId}
+            onSelect={onSelect}
           />
           {isMap ? <MapLegend /> : <DetailLegend />}
           <AnimatePresence>
@@ -147,12 +149,16 @@ function GraphHeader({
   loading,
   onBack,
   onRefresh,
+  selectedId,
+  onSelect,
 }: {
   data: GraphResponse;
   topicName: string | null;
   loading: boolean;
   onBack: () => void;
   onRefresh: () => void;
+  selectedId: string | null;
+  onSelect: (id: string | null) => void;
 }) {
   const conflicts = data.edges.filter((e) => e.type === "conflicts_with").length;
   const topics = data.nodes.filter((n) => n.type === "topic").length;
@@ -160,52 +166,29 @@ function GraphHeader({
   const redTopics = data.nodes.filter((n) => n.type === "topic" && n.trust === "red").length;
 
   return (
-    <div className="absolute top-4 left-4 right-4 z-10 flex items-start gap-2 pointer-events-none">
-      <Card className="pointer-events-auto px-3 h-9 text-sm flex items-center gap-3">
-        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5">
-          {topicName ? (
-            <>
-              <button
-                type="button"
-                onClick={onBack}
-                className="text-muted-foreground hover:text-foreground transition-colors rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                All topics
-              </button>
-              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
-              <span className="font-semibold" aria-current="page">
-                {topicName}
-              </span>
-            </>
-          ) : (
-            <span className="font-semibold" aria-current="page">
-              All topics
-            </span>
-          )}
-        </nav>
-        <span className="h-4 w-px bg-border" aria-hidden />
-        <span className="text-xs text-muted-foreground tabular-nums">
-          {topicName
-            ? `${docs} document${docs === 1 ? "" : "s"}`
-            : `${topics} topic${topics === 1 ? "" : "s"} · click one to see its documents`}
-        </span>
-        {(topicName ? conflicts : redTopics) > 0 && (
-          <span className="text-xs font-semibold text-danger tabular-nums">
-            {topicName
-              ? `${conflicts} conflict${conflicts === 1 ? "" : "s"}`
-              : `${redTopics} with a conflict`}
-          </span>
-        )}
-      </Card>
-      <Button
-        variant="outline"
-        size="icon"
-        className="pointer-events-auto bg-card h-9 w-9"
-        onClick={onRefresh}
-        aria-label="Refresh graph"
-      >
-        <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-      </Button>
+    <div className="absolute top-0 inset-x-0 z-10 border-b border-border bg-background/95 px-6 py-4">
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <nav aria-label="Breadcrumb" className="mb-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+            {topicName ? <><button type="button" onClick={onBack} className="rounded hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">All topics</button><ChevronRight className="h-3 w-3" aria-hidden /><span aria-current="page" className="truncate">{topicName}</span></> : <span aria-current="page">All topics</span>}
+          </nav>
+          <h1 className="text-xl tracking-tight">{topicName ?? "Your knowledge, connected"}</h1>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {topicName ? `${docs} document${docs === 1 ? "" : "s"} · explore their relationships` : `${topics} topic${topics === 1 ? "" : "s"} · choose a topic to explore its documents`}
+            {(topicName ? conflicts : redTopics) > 0 && <span className="ml-2 text-danger-foreground dark:text-danger">· {topicName ? `${conflicts} conflict${conflicts === 1 ? "" : "s"}` : `${redTopics} with a conflict`}</span>}
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <div>
+            <label htmlFor="graph-node" className="sr-only">Explore a node</label>
+            <select id="graph-node" value={selectedId ?? ""} onChange={(event) => onSelect(event.target.value || null)} className="h-9 w-44 rounded-lg border border-border bg-card px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <option value="">{topicName ? "Explore a node…" : "Explore a topic…"}</option>
+              {data.nodes.map((node) => <option key={node.id} value={node.id}>{nodeLabel(node)} · {TYPE_LABEL[node.type]}</option>)}
+            </select>
+          </div>
+          <Button variant="outline" size="icon" className="bg-card h-9 w-9" onClick={onRefresh} aria-label="Refresh graph"><RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} /></Button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -214,12 +197,12 @@ const dot = (cls: string) => <span className={cn("h-2.5 w-2.5 rounded-full inlin
 
 function MapLegend() {
   return (
-    <Card className="absolute bottom-4 left-4 z-10 p-3 text-xs space-y-1.5">
-      <div className="font-semibold text-[11px] uppercase tracking-wide text-muted-foreground">Legend</div>
+    <Card className="absolute bottom-5 left-5 z-10 p-3 text-[11px] flex flex-wrap items-center gap-x-4 gap-y-2 max-w-[calc(100%-12rem)]">
+      <div className="font-semibold text-[10px] uppercase tracking-wider text-muted-foreground">Legend</div>
       <div className="flex items-center gap-2">
-        {dot("bg-ok")} Topic, size = documents
+        {dot("border border-primary bg-card")} Topic · size = documents
       </div>
-      <div className="flex items-center gap-2 pl-[18px] text-muted-foreground">
+      <div className="flex items-center gap-2 text-muted-foreground">
         <span className="flex items-center gap-1">{dot("bg-ok")} trusted</span>
         <span className="flex items-center gap-1">{dot("bg-warn")} attention</span>
         <span className="flex items-center gap-1">{dot("bg-danger")} conflict</span>
@@ -232,9 +215,9 @@ function MapLegend() {
 
 function DetailLegend() {
   return (
-    <Card className="absolute bottom-4 left-4 z-10 p-3 text-xs space-y-1.5">
-      <div className="font-semibold text-[11px] uppercase tracking-wide text-muted-foreground">Legend</div>
-      <div className="flex items-center gap-2">{dot("bg-primary")} Topic (ring = trust)</div>
+    <Card className="absolute bottom-5 left-5 z-10 p-3 text-[11px] flex flex-wrap items-center gap-x-4 gap-y-2 max-w-[calc(100%-12rem)]">
+      <div className="font-semibold text-[10px] uppercase tracking-wider text-muted-foreground">Legend</div>
+      <div className="flex items-center gap-2">{dot("bg-primary")} Topic · ring = trust</div>
       <div className="flex items-center gap-2">{dot("bg-ok")} Live document</div>
       <div className="flex items-center gap-2">{dot("bg-danger")} Blocked document</div>
       <div className="flex items-center gap-2">{dot("bg-unknown")} Superseded document</div>
@@ -260,6 +243,7 @@ function NodePanel({
   onClose: () => void;
   onSelect: (id: string) => void;
 }) {
+  const reducedMotion = useReducedMotion();
   const node = data.nodes.find((n) => n.id === nodeId);
   if (!node) return null;
   const byId = new Map(data.nodes.map((n) => [n.id, n]));
@@ -277,8 +261,8 @@ function NodePanel({
       initial={{ x: 24, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: 24, opacity: 0 }}
-      transition={{ duration: 0.2 }}
-      className="absolute top-16 right-4 bottom-4 z-20 w-80 max-w-[calc(100%-2rem)]"
+      transition={{ duration: reducedMotion ? 0 : 0.2 }}
+      className="absolute top-28 right-4 bottom-24 z-20 w-80 max-w-[calc(100%-2rem)]"
     >
       <Card className="h-full flex flex-col overflow-hidden">
         <div className="p-4 border-b border-border flex items-start justify-between gap-2">
@@ -316,7 +300,7 @@ function NodePanel({
                     type="button"
                     onClick={() => onSelect(other.id)}
                     className={cn(
-                      "w-full text-left rounded-md px-2 py-1.5 hover:bg-muted text-sm transition-colors",
+                      "w-full text-left rounded-md px-2 py-1.5 hover:bg-muted text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                       edge.type === "conflicts_with" && "bg-danger-tint text-danger-foreground hover:bg-danger-tint/80"
                     )}
                   >

@@ -1,18 +1,16 @@
 import { cn } from "@/lib/utils";
 
-/** Verity mark: a single page with a check — "one source, verified". */
+/** An open page and a decisive check: many records, one verified source. */
 export function VerityLogo({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 32 32" className={cn("shrink-0", className)} aria-hidden>
-      <rect width="32" height="32" rx="8" className="fill-primary" />
-      <path
-        d="M9.5 10.5 16 22l6.5-11.5"
-        fill="none"
-        stroke="white"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+    <svg viewBox="0 0 32 32" fill="none" className={cn("shrink-0 text-primary", className)} aria-hidden="true">
+      <path d="M18 5H8a3 3 0 0 0-3 3v16a3 3 0 0 0 3 3h16a3 3 0 0 0 3-3v-7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M11 15.5 16 21 28 6" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M10 10h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity=".45" />
     </svg>
   );
+}
+
+export function VerityWordmark({ className }: { className?: string }) {
+  return <span className={cn("font-semibold tracking-[-0.055em] leading-none", className)}>verity<span className="text-primary">.</span></span>;
 }

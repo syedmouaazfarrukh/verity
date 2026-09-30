@@ -40,12 +40,12 @@ export function Sidebar({ collapsed, onToggle, openIssues }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "h-full border-r border-border bg-card flex flex-col transition-[width] duration-300 ease-out shrink-0",
+        "h-full border-r border-border bg-card flex flex-col motion-safe:transition-[width] duration-300 ease-out shrink-0",
         collapsed ? "w-16" : "w-56"
       )}
       aria-label="Primary"
     >
-      <nav className="flex-1 px-2 py-3 space-y-0.5">
+      <nav className="flex-1 px-3 py-5 space-y-1">
         {items.map((item) => (
           <SidebarItem key={item.to} item={item} collapsed={collapsed} />
         ))}
@@ -81,7 +81,7 @@ function SidebarItem({ item, collapsed }: { item: NavItem; collapsed: boolean })
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           collapsed && "justify-center px-0",
           isActive
-            ? "bg-muted text-foreground font-medium"
+            ? "bg-primary/[0.08] text-primary font-semibold shadow-[inset_2px_0_0_hsl(var(--primary))]"
             : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
         )
       }
@@ -90,7 +90,7 @@ function SidebarItem({ item, collapsed }: { item: NavItem; collapsed: boolean })
       {!collapsed && <span className="truncate flex-1">{label}</span>}
       {hasBadge && !collapsed && (
         <span
-          className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-danger text-white text-[11px] font-semibold flex items-center justify-center tabular-nums"
+          className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-danger-foreground dark:bg-danger dark:text-zinc-950 text-white text-[11px] font-semibold flex items-center justify-center tabular-nums"
           aria-label={`${badge} open issues`}
         >
           {badge}

@@ -5,12 +5,12 @@
 
 /* Verity design tokens
    HSL channels (no hsl() wrapper) so Tailwind utilities can compose.
-   All values translate directly from Tailwind's zinc / indigo / emerald / amber / rose. */
+   Neutral surfaces with a restrained ink-violet accent; trust colours retain their meaning. */
 
 @layer base {
   :root {
     /* Light mode — restrained zinc neutrals */
-    --background: 0 0% 98%;            /* zinc-50  */
+    --background: 240 14% 98%;            /* zinc-50  */
     --foreground: 240 10% 9%;          /* zinc-900 */
 
     --card: 0 0% 100%;                 /* white    */
@@ -20,13 +20,13 @@
     --popover-foreground: 240 10% 9%;
 
     --muted: 240 5% 96%;               /* zinc-100 */
-    --muted-foreground: 240 4% 46%;    /* zinc-500 */
+    --muted-foreground: 240 5% 42%;    /* zinc-500 */
 
     --border: 240 6% 90%;              /* zinc-200 */
     --input: 240 6% 90%;
-    --ring: 239 84% 60%;               /* indigo-600 — focus ring */
+    --ring: 245 57% 54%;               /* indigo-600 — focus ring */
 
-    --primary: 239 84% 60%;            /* indigo-600 */
+    --primary: 245 57% 54%;            /* indigo-600 */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 240 5% 96%;
@@ -54,7 +54,7 @@
     --unknown: 240 5% 65%;             /* zinc-400 */
     --unknown-foreground: 240 4% 46%;
 
-    --radius: 0.5rem;
+    --radius: 0.625rem;
   }
 
   .dark {
@@ -71,10 +71,10 @@
     --muted-foreground: 240 5% 65%;    /* zinc-400 */
 
     --border: 240 4% 16%;
-    --input: 240 4% 16%;
-    --ring: 234 89% 74%;               /* indigo-400 */
+    --input: 240 4% 28%;
+    --ring: 247 84% 79%;               /* indigo-400 */
 
-    --primary: 234 89% 74%;
+    --primary: 247 84% 79%;
     --primary-foreground: 240 10% 9%;
 
     --secondary: 240 4% 16%;
@@ -122,5 +122,23 @@
   .bg-dot-grid {
     background-image: radial-gradient(circle, hsl(var(--border)) 1px, transparent 1px);
     background-size: 24px 24px;
+  }
+}
+
+@layer components {
+  .login-layout { display: grid; }
+  .login-story { padding: 2rem; background: hsl(var(--muted) / .55); }
+  @media (min-width: 1024px) {
+    .login-layout { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); }
+    .login-story { min-height: 100vh; padding: 2.5rem clamp(2rem, 5vw, 5rem); }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

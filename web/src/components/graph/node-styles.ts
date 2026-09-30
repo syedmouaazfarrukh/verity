@@ -30,7 +30,7 @@ const TYPE_STYLES: Record<GraphNodeType, TypeStyle> = {
   department: { hex: "#52525b", hexDark: "#71717a", svg: LUCIDE.Briefcase, size: 30 },
 };
 
-export const ACCENT = { light: "#4f46e5", dark: "#818cf8" } as const;
+export const ACCENT = { light: "#5145cd", dark: "#a59bf6" } as const;
 
 const DOC_STATUS = {
   light: { live: "#10b981", blocked: "#f43f5e", superseded: "#a1a1aa", rejected: "#d4d4d8" },
@@ -51,7 +51,7 @@ type Style = { selector: string; style: Record<string, unknown> };
 
 const DEPT_LABEL: Record<string, string> = { payroll: "Payroll", hr: "HR", finance: "Finance" };
 
-export function nodeStylesheet(opts: { dark: boolean }): Style[] {
+export function nodeStylesheet(opts: { dark: boolean; reducedMotion?: boolean }): Style[] {
   const dark = opts.dark;
   const mode = dark ? "dark" : "light";
   const labelColor = dark ? "#fafafa" : "#18181b";
@@ -66,11 +66,12 @@ export function nodeStylesheet(opts: { dark: boolean }): Style[] {
       style: {
         width: ts.size,
         height: ts.size,
-        "background-image": iconUri(ts.svg, halo, dark ? ts.hexDark : ts.hex),
+        "background-image": iconUri(ts.svg, dark ? ts.hexDark : ts.hex, halo),
         "background-fit": "contain",
         "background-clip": "node",
         "background-opacity": 0,
-        "border-width": 0,
+        "border-width": 1.5,
+        "border-color": dark ? "#3f3f46" : "#d4d4d8",
         "font-weight": t === "topic" ? 600 : 500,
       },
     };
@@ -79,7 +80,7 @@ export function nodeStylesheet(opts: { dark: boolean }): Style[] {
   const docStyles: Style[] = (Object.keys(DOC_STATUS.light) as (keyof typeof DOC_STATUS.light)[]).map((s) => ({
     selector: `node[type = "document"][status = "${s}"]`,
     style: {
-      "background-image": iconUri(LUCIDE.FileText, halo, DOC_STATUS[mode][s]),
+      "background-image": iconUri(LUCIDE.FileText, DOC_STATUS[mode][s], halo),
       ...(s === "superseded" || s === "rejected" ? { opacity: 0.75 } : {}),
     },
   }));
@@ -114,7 +115,7 @@ export function nodeStylesheet(opts: { dark: boolean }): Style[] {
         "text-background-padding": 2,
         "text-background-shape": "roundrectangle",
         "transition-property": "border-color, border-width, width, height, opacity",
-        "transition-duration": 300,
+        "transition-duration": opts.reducedMotion ? 0 : 200,
       },
     },
     ...typeStyles,
@@ -135,7 +136,7 @@ export function nodeStylesheet(opts: { dark: boolean }): Style[] {
     {
       selector: "node:selected",
       style: {
-        "border-color": "#4f46e5",
+        "border-color": dark ? ACCENT.dark : ACCENT.light,
         "border-width": 3,
         "border-opacity": 1,
       },
@@ -203,15 +204,23 @@ export function nodeStylesheet(opts: { dark: boolean }): Style[] {
       selector: 'node[type = "department"]',
       style: { label: (ele: { data: (k: string) => string }) => DEPT_LABEL[ele.data("label")] ?? ele.data("label") },
     },
-    // Topic map: topics sized by how many documents they hold, filled with their trust colour.
+    // Topic cards: size reflects document count; the border carries trust status.
     {
       selector: 'node[type = "topic"][doc_count]',
       style: {
-        width: "mapData(doc_count, 1, 8, 40, 76)",
-        height: "mapData(doc_count, 1, 8, 40, 76)",
-        "border-width": 0,
-        "font-size": 12,
-        "font-weight": 600,
+        shape: "roundrectangle",
+        width: "mapData(doc_count, 1, 8, 164, 194)",
+        height: "mapData(doc_count, 1, 8, 76, 90)",
+        "background-opacity": 1,
+        "background-color": halo,
+        "background-image": "none",
+        "border-width": 1.5,
+        "text-valign": "center",
+        "text-margin-y": 0,
+        "text-background-opacity": 0,
+        "font-size": 13,
+        "line-height": 1.4,
+        "font-weight": 500,
         "text-wrap": "wrap",
         "text-max-width": 150,
         label: (ele: { data: (k: string) => unknown }) => {
@@ -223,8 +232,9 @@ export function nodeStylesheet(opts: { dark: boolean }): Style[] {
     },
     ...(Object.keys(TRUST.light) as (keyof typeof TRUST.light)[]).map((t) => ({
       selector: `node[type = "topic"][doc_count][trust = "${t}"]`,
-      style: { "background-image": iconUri(LUCIDE.BookOpen, halo, TRUST[mode][t]) },
+      style: { "border-color": TRUST[mode][t] },
     })),
+    { selector: 'edge.hover[type = "conflicts_with"]', style: { "line-color": red, color: red, label: "conflict", width: 3 } },
     { selector: "node.dim, edge.dim", style: { opacity: 0.2 } },
   ];
 }
@@ -234,7 +244,7 @@ export function nodeStylesheet(opts: { dark: boolean }): Style[] {
  * its direct path stays normal, everything else is muted. `.focus` wins over `.muted` so
  * hovering a card row can bring any node forward.
  */
-export function answerGraphStylesheet(opts: { dark: boolean }): Style[] {
+export function answerGraphStylesheet(opts: { dark: boolean; reducedMotion?: boolean }): Style[] {
   const dark = opts.dark;
   const accent = dark ? ACCENT.dark : ACCENT.light;
   const labelColor = dark ? "#fafafa" : "#18181b";
@@ -248,11 +258,11 @@ export function answerGraphStylesheet(opts: { dark: boolean }): Style[] {
         "text-max-width": 104,
         "font-size": 10.5,
         "transition-property": "opacity, border-width, width, height, underlay-opacity",
-        "transition-duration": 500,
+        "transition-duration": opts.reducedMotion ? 0 : 300,
         "transition-timing-function": "ease-in-out",
       },
     },
-    { selector: "edge", style: { "transition-property": "opacity, width", "transition-duration": 500 } },
+    { selector: "edge", style: { "transition-property": "opacity, width", "transition-duration": opts.reducedMotion ? 0 : 300 } },
     {
       selector: "node.source",
       style: {
@@ -291,6 +301,7 @@ export function answerGraphStylesheet(opts: { dark: boolean }): Style[] {
         "z-index": 30,
       },
     },
+    { selector: 'edge.path[type = "conflicts_with"]', style: { "line-color": red, width: 3 } },
     { selector: "node.source.focus", style: { "underlay-color": accent, "underlay-opacity": 0.28, color: dark ? "#c7d2fe" : "#3730a3" } },
     { selector: "edge.focus", style: { opacity: 1, width: 2 } },
     { selector: 'edge.focus[type = "conflicts_with"]', style: { width: 3, "line-color": red } },
