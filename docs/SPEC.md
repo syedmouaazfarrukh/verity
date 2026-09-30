@@ -51,11 +51,15 @@ The plan lives in [`CONTRACT.md`](../CONTRACT.md) (v1, then a v2 addendum). Stat
 | 12 | Sources + fingerprints (email, SharePoint, Drive, Git, Teams; SHA-256) | Built (v2) | `documents.source/source_detail/sha256`; `SourceBadge`, `Fingerprint` in `badges.tsx` |
 | 13 | On-premise AI for answer wording + grounding check + verbatim quotes | Built (v2) | `docker-compose.yml` service `llm`; `api/llm_client.py`, `api/chat.py` |
 | 14 | Consultants can't silently publish over a live rule; "updated by" = real uploader | Built (fix) | `api/ingest.py`, `api/checks.py` |
-| 15 | Real connectors (email inbox, Drive, SharePoint, Git) | **Not built** (roadmap; the demo shows a source label from front-matter) | brief: "Many sources, one door" |
+| 15 | Real connectors (Gmail, Slack, GitHub, Notion, SharePoint, Drive, Teams) | **Not built**: shown as "Coming soon" on the dashboard; documents carry an origin label from front-matter | brief: "Many sources, one door" |
 | 16 | PDF / image upload | **Not built** (only `.md`, `.txt`) | `api/main.py` `ALLOWED_EXTENSIONS` |
 | 17 | Aikido scan + fixes | **Pending** (repo connected next). Pre-checks done: `npm audit` 0, `pip-audit` 0 | §6 |
 | 18 | Cloud deployment | **Pending** (target not chosen) | |
 | 19 | Audit-log screen | **Not built** (API `/api/audit` exists, owner/admin only) | |
+| 20 | Ask as a centred, T3-style home; conversation thread; no topic grid on home | Built (v3) | `web/src/pages/ask.tsx` |
+| 21 | Library page: topic grid + search + country/department/trust filters | Built (v3) | `web/src/pages/library.tsx` |
+| 22 | Live Dashboard: "many sources, one door" flow, only Upload live (drop zone), other connectors shown as Coming soon, activity feed, health | Built (v3) | `api/dashboard.py`, `/api/dashboard`; `web/src/pages/dashboard.tsx`, `web/src/components/dashboard/*` |
+| 23 | Re-uploading an identical file is rejected by fingerprint (409) | Built | `api/main.py` upload route |
 
 ---
 
@@ -89,7 +93,8 @@ Browser ──HTTP :3000──► app container (python:3.12-slim, non-root)
   | `llm_client.py` | Anthropic or OpenAI-compatible (Ollama) client, 30 s timeout |
   | `crypto_helpers.py` | Ed25519 key + signing (key generated at `data/keys/`) |
   | `seed.py` | loads `seed/docs/*.md` with version chains, runs checks over live docs |
-  | `test_smoke.py` | 36 tests |
+  | `dashboard.py` | scoped dashboard: totals, sources, issues, topics, activity feed |
+  | `test_smoke.py` | 41 tests |
 
 - **Frontend** (`web/`, React 18 + Vite 6 + TypeScript + Tailwind + Radix/shadcn-style components + Framer Motion +
   Cytoscape; React Router 7). All API calls go through `web/src/lib/api.ts`.
@@ -150,7 +155,7 @@ topic/country/department becomes `superseded`. Owner resolution: `accept_new` (n
 `GET /health` · `POST /auth/login` · `POST /auth/logout` · `GET /me` · `GET /topics` · `GET /documents` ·
 `GET /documents/{id}` · `POST /documents` (multipart) · `GET /issues?status=open|resolved|all` ·
 `POST /issues/{id}/resolve` · `POST /chat` · `GET /receipts/{id}/verify` · `GET /graph[?topic=]` ·
-`GET /audit` (owner/admin). Response shapes: `CONTRACT.md` plus the v2 addendum, and the TS types in
+`GET /audit` (owner/admin) · `GET /dashboard`. Response shapes: `CONTRACT.md` plus the v2 addendum, and the TS types in
 `web/src/lib/api.ts`.
 
 ---
@@ -160,14 +165,16 @@ topic/country/department becomes `superseded`. Owner resolution: `accept_new` (n
 | screen | route | what's on it |
 |---|---|---|
 | Login | `/login` | username/password; one-click demo users (sofie, daan, lies, noor, admin); safe `next` redirect |
-| Knowledge | `/` | ask box + example questions (per department); chat-style answer with mode label, quotes, source line, receipt chip, **Details** (4 cards left, answer graph right, hover-linked); topic grid with trust dots |
+| Ask | `/` | centred greeting + ask box + department-aware examples; after the first question a conversation thread with the box docked at the bottom and "New chat"; each answer has mode label, quotes, source line, receipt chip, **Details** (4 cards left, answer graph right, hover-linked) |
+| Library | `/library` | topic cards with trust dots and live documents; search; filters for country, department, trust |
+| Dashboard | `/dashboard` | stat tiles; live "many sources, one door" flow: Upload (the only live connector, also a drop zone) → the Verity check → Live / Blocked → Answers, with a moving dot per upload; Gmail, Slack, GitHub, Notion, SharePoint, Drive, Teams shown faded as "Coming soon" (no numbers); activity feed; health; polls every 3 s |
 | Document | `/documents/:id` | safe markdown render (no `dangerouslySetInnerHTML`), status banner, metadata, source + fingerprint, version history, claims, issues |
 | Upload | `/upload` | drag-drop/picker (.md/.txt, 200 KB); outcome banner; issue cards with level, SLA countdown, "live says / yours says" |
 | Review queue | `/issues` | grouped by level, open/resolved tabs; owners resolve with a required note; consultants read-only |
 | Graph | `/graph` | topic map (size = doc count, colour = trust, country and department nodes), click → `?topic=` drill-down with breadcrumb; side panel |
 
-Shell: top bar (logo, tagline, user, role, country + department chips, theme toggle, sign out), sidebar (Knowledge,
-Upload, Review queue with open count, Graph). Light and dark themes.
+Shell: top bar (logo, tagline, user, role, country + department chips, theme toggle, sign out), sidebar (Ask, Library,
+Dashboard, Upload, Review queue with open count, Graph). Light and dark themes.
 
 ---
 
@@ -236,7 +243,7 @@ Upload, Review queue with open count, Graph). Light and dark themes.
 ```bash
 git clone https://github.com/syedmouaazfarrukh/verity && cd verity
 
-# 1. Backend tests — expect "36 passed"
+# 1. Backend tests — expect "41 passed"
 cd api && uv run --python 3.12 --with-requirements requirements.txt pytest -q && cd ..
 
 # 2. Web build + dependency audit — expect "✓ built" and "found 0 vulnerabilities"

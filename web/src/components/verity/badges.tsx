@@ -7,6 +7,7 @@ import {
   HardDrive,
   Mail,
   MessagesSquare,
+  NotebookText,
   Share2,
   Upload,
   type LucideIcon,
@@ -129,6 +130,7 @@ const SOURCE_META: Record<string, { label: string; icon: LucideIcon }> = {
   sharepoint: { label: "SharePoint", icon: Share2 },
   git: { label: "Git", icon: FolderGit2 },
   teams: { label: "Teams", icon: MessagesSquare },
+  notion: { label: "Notion", icon: NotebookText },
 };
 
 export function sourceLabel(source: DocSource | null | undefined): string {

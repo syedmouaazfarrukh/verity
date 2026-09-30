@@ -264,3 +264,106 @@ Topic grid stays below.
 ## E. UI polish pass
 After A–D: consistent spacing, empty/loading states, no Postura leftovers, answer panel looks great at 1280×800 and
 1440×900 in light and dark mode.
+
+---
+
+# v3 addendum (approved 30 Sep 2026): centred Ask home, Library, live Dashboard
+
+Keep everything in v1/v2 working; all existing tests must still pass.
+
+## A. Navigation
+Sidebar order: **Ask** (`/`) · **Library** (`/library`) · **Dashboard** (`/dashboard`) · Upload · Review queue · Graph.
+
+## B. Ask (home, `/`), like opening a new T3 chat
+- Empty state: vertically and horizontally centred column (max ~720px): logo mark, "Hi Sofie, what do you need to
+  know?", one-line subtitle, the ask box, 3–4 example questions (department-aware, as today). Nothing else on screen.
+- After the first question: the page becomes a conversation thread for this session (question bubble → answer block,
+  newest at the bottom, auto-scroll), and the ask box docks at the bottom of the viewport. Existing AnswerBlock +
+  Details panel are reused unchanged. "New question" / clear-thread button in the header of the thread.
+- No topic grid on this page any more.
+
+## C. Library (`/library`)
+The topic grid moves here unchanged in look, plus: a search box (title/topic), filters for country, department and
+trust (green/amber/red), and a count ("7 topics · 13 documents"). Uses the existing `/api/topics` (+ `/api/documents`
+if needed). Empty state when filters match nothing.
+
+## D. Dashboard (`/dashboard`): the "many sources, one door" diagram, live, with real numbers
+
+### API
+`GET /api/dashboard` (any signed-in user; **every number and event is scoped** to the user's countries AND
+departments, enforced in SQL like everything else):
+```jsonc
+{
+  "totals": { "documents": 13, "live": 9, "blocked": 1, "superseded": 3, "rejected": 0 },
+  "sources": [   // ALWAYS all 7, in this order: upload, email, sharepoint, google-drive, notion, git, teams
+    { "id": "email", "label": "Email", "status": "live" | "demo" | "not_connected",
+      "documents": 2, "live": 0, "blocked": 1, "last_at": "ISO" | null, "demo_import": true }
+  ],
+  "issues": { "open": { "critical": 1, "high": 1, "medium": 2, "low": 0 }, "overdue": 0,
+              "next_due": { "id", "document_id", "document_title", "level", "due_at" } | null },
+  "topics": { "green": 5, "amber": 1, "red": 1 },
+  "activity": [  // newest first, max 25, scoped; plain-English one-liners
+    { "id": "…", "at": "ISO", "actor": "Sofie Claes", "kind": "published|uploaded|blocked|live|resolved|superseded|imported",
+      "text": "Sofie Claes uploaded 'Home-office allowance — note forwarded by email' from Email → blocked (critical conflict: €130 vs €150).",
+      "document_id": "doc-…" | null, "source": "email" | null, "outcome": "live" | "blocked" | null }
+  ],
+  "generated_at": "ISO"
+}
+```
+- Source status: `upload` → `"live"` (it's the real ingestion path). Any other source with ≥1 in-scope document →
+  `"demo"` (documents tagged with that origin in front-matter). A source with none → `"not_connected"`.
+  `demo_import` is true only for `email`.
+- Activity comes from real data: `audit_log` upload/resolve/import entries (joined to documents so scope applies), plus
+  one synthetic "published" event per seed document (at its `updated_at`, actor `updated_by`). Never login/chat events.
+- Add `notion` to the allowed sources. Tag seed `mobility-budget-be-v1.md` as `source: notion`,
+  `source_detail: "Payroll wiki / Mobility budget"`, so Notion has a real (demo) count.
+
+`POST /api/connectors/email/demo-import` (CSRF header required; any role, but the normal upload scope rules apply —
+the note is BE/payroll, so sofie/lies/admin can, daan/noor get 403):
+- Ingests `seed/uploads/1-conflict-emailed-note-hoa-be.md` through the **normal ingest path** as the signed-in user
+  (same checks, same outcome), audit action `import:email:<outcome>`.
+- If a document with the same sha256 already exists (any status) → 409 `{detail:"Already imported: <title>."}`.
+- Returns the same shape as `POST /documents`. Any other `/api/connectors/{x}/demo-import` → 404.
+
+### UI
+Layout (1280×800 must look great, light + dark):
+1. **Header row**: title "Dashboard", subtitle "Every document passes through one check before anyone can rely on it.",
+   and a small live indicator ("Live · updated 3s ago"; poll `/api/dashboard` every 3 s while the tab is visible).
+2. **Stat tiles** (4): Documents · Live · Blocked · Open issues (with the next deadline countdown). Colour only for
+   meaning (green live, red blocked).
+3. **The flow** (hero, full width): left column = 7 **source cards** with brand marks (Upload icon; Gmail-style mark for
+   Email; SharePoint, Google Drive, Notion, GitHub, Microsoft Teams marks as small inline SVGs in
+   `components/verity/brand-icons.tsx`, no new dependency), each showing count + status pill ("Live" green, "Demo
+   source" neutral, "Not connected" muted/dashed). Email card has an **"Import demo inbox"** button (calls the endpoint,
+   toast + result). Middle = **"One door: the Verity check"** node listing what it checks (source + uploader,
+   fingerprint, rules per country, department access). Right = **Live** (green, count) and **Blocked** (red, count),
+   then a small **"Answers"** node (Chat · Copilot · search). SVG/CSS connectors between them, with source lines
+   thickness/opacity by count; not-connected sources draw dashed, faint lines.
+   **Motion**: when a new activity item with an outcome appears, animate a dot from its source card → the door →
+   Live or Blocked (≈1.5 s), then pulse the target count. Respect `prefers-reduced-motion`.
+4. **Bottom row**: **Activity feed** (latest events, relative time, outcome badge, click → document) and a compact
+   **Health** card (open issues by level, overdue count, topics green/amber/red, link to Review queue).
+Mark demo honesty clearly: a footnote "Upload is live. Other sources show documents tagged with their origin;
+connectors are on the roadmap."
+
+## v3.1 change (user decision, overrides section D above): no fake connectors
+- **Only Upload is a real connector.** Everything else is shown as **"Coming soon"**: visually blurred/faded, no
+  counts, no numbers, not clickable, with the footnote "Only Upload is live today. These connectors are on the roadmap."
+- **Drop the email demo import entirely**: no `POST /api/connectors/*` endpoint, no "Import demo inbox" button.
+- `sources` in `GET /api/dashboard` becomes:
+  ```jsonc
+  "sources": [
+    { "id": "upload", "label": "Upload", "status": "live", "documents": 13, "live": 9, "blocked": 1, "last_at": "ISO" },
+    { "id": "email",  "label": "Gmail",  "status": "coming_soon" },   // then, in this order:
+    // slack "Slack", github "GitHub", notion "Notion", sharepoint "SharePoint", google-drive "Google Drive", teams "Microsoft Teams"
+  ]
+  ```
+  Upload's counts are ALL in-scope documents (everything in the space entered through this one door, including the
+  initial import). Coming-soon entries carry only id/label/status.
+- The per-document `source`/`source_detail` metadata stays as provenance ("originally from SharePoint") on the document
+  page and in answer details. It is not a connector.
+- **Live demo moment instead**: the Upload source card on the dashboard is a **drop zone** ("Drop a .md or .txt file"),
+  which calls the normal `POST /api/documents`. On the result, animate the dot from Upload → the door → Live/Blocked,
+  pulse the count, show the outcome inline on the card (link to the upload result/document), and refresh the feed.
+  Also animate for new upload activity detected between polls (e.g. someone else uploaded).
+- Activity kinds: drop `imported`.

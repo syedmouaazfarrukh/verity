@@ -4,6 +4,8 @@ topic: mobility-budget
 topic_name: Mobility budget
 country: BE
 department: payroll
+source: notion
+source_detail: "Payroll wiki / Mobility budget"
 owner: Lies Vermeulen
 effective_date: 2025-01-01
 review_by: 2026-12-31

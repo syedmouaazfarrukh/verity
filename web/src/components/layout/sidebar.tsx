@@ -1,6 +1,15 @@
 import * as React from "react";
 import { NavLink } from "react-router-dom";
-import { BookOpen, Upload, ListChecks, Network, ChevronsLeft, ChevronsRight } from "lucide-react";
+import {
+  ChevronsLeft,
+  ChevronsRight,
+  LayoutDashboard,
+  Library,
+  ListChecks,
+  MessageSquare,
+  Network,
+  Upload,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -20,7 +29,9 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed, onToggle, openIssues }: SidebarProps) {
   const items: NavItem[] = [
-    { to: "/", label: "Knowledge", icon: BookOpen },
+    { to: "/", label: "Ask", icon: MessageSquare },
+    { to: "/library", label: "Library", icon: Library },
+    { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/upload", label: "Upload", icon: Upload },
     { to: "/issues", label: "Review queue", icon: ListChecks, badge: openIssues },
     { to: "/graph", label: "Graph", icon: Network },

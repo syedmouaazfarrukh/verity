@@ -178,11 +178,14 @@ export function AnswerBlock({
   answer,
   detailsOpen,
   onToggleDetails,
+  detailsId = "answer-details",
 }: {
   question: string;
   answer: ChatResponse;
   detailsOpen: boolean;
   onToggleDetails: () => void;
+  /** DOM id of the details panel; must be unique when several answers are on screen (Ask thread). */
+  detailsId?: string;
 }) {
   const doc = answer.document;
   const verify = useReceiptVerification(answer.receipt?.id);
@@ -194,11 +197,11 @@ export function AnswerBlock({
   React.useEffect(() => {
     if (!detailsOpen || !hasDetails) return;
     const t = window.setTimeout(
-      () => document.getElementById("answer-details")?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      () => document.getElementById(detailsId)?.scrollIntoView({ behavior: "smooth", block: "start" }),
       320
     );
     return () => window.clearTimeout(t);
-  }, [detailsOpen, hasDetails]);
+  }, [detailsOpen, hasDetails, detailsId]);
 
   const blockedAlts = alternatives.filter((a) => a.status === "blocked").length;
   const quotes = answer.quotes ?? [];
@@ -280,7 +283,7 @@ export function AnswerBlock({
                     variant={detailsOpen ? "secondary" : "outline"}
                     onClick={onToggleDetails}
                     aria-expanded={detailsOpen}
-                    aria-controls="answer-details"
+                    aria-controls={detailsId}
                     className="h-7 gap-1.5"
                   >
                     Details
@@ -298,7 +301,7 @@ export function AnswerBlock({
       <AnimatePresence initial={false}>
         {detailsOpen && hasDetails && (
           <motion.div
-            id="answer-details"
+            id={detailsId}
             key="details"
             // overflow is only hidden while animating: the sticky graph column needs it visible.
             initial={{ height: 0, opacity: 0 }}

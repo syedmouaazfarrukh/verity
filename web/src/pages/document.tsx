@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { AlertTriangle, ArrowLeft, CheckCircle2, FileX, History, ListChecks, Tag } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,9 @@ import { cn } from "@/lib/utils";
 
 export function DocumentPage() {
   const { id = "" } = useParams();
+  const navigate = useNavigate();
+  // Documents open from Ask, Library, Dashboard and the review queue: go back to wherever that was.
+  const canGoBack = ((window.history.state as { idx?: number } | null)?.idx ?? 0) > 0;
   const [notFound, setNotFound] = React.useState(false);
   const state = useAsync(async () => {
     setNotFound(false);
@@ -29,8 +32,16 @@ export function DocumentPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-8">
-      <Link to="/" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-4">
-        <ArrowLeft className="h-3.5 w-3.5" /> Knowledge space
+      <Link
+        to="/library"
+        onClick={(e) => {
+          if (!canGoBack) return;
+          e.preventDefault();
+          navigate(-1);
+        }}
+        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-4"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" /> {canGoBack ? "Back" : "Library"}
       </Link>
       {state.loading && !state.data ? (
         <DocumentSkeleton />
@@ -41,7 +52,7 @@ export function DocumentPage() {
           description="It doesn't exist, or it's outside the countries or departments you have access to."
           action={
             <Button asChild size="sm" variant="outline">
-              <Link to="/">Back to knowledge space</Link>
+              <Link to="/library">Back to the Library</Link>
             </Button>
           }
         />

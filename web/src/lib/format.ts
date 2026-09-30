@@ -74,3 +74,17 @@ export function humanizeKey(key: string): string {
   const s = key.replace(/[-_]+/g, " ").trim();
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
+
+/** "just now" / "12s ago" / "4m ago" / "3h ago" / "2d ago", then the date. */
+export function formatAgo(value: string | null | undefined, now: number = Date.now()): string {
+  if (!value) return "—";
+  const t = new Date(value.length === 10 ? `${value}T00:00:00` : value).getTime();
+  if (Number.isNaN(t)) return value;
+  const s = Math.max(0, Math.round((now - t) / 1000));
+  if (s < 5) return "just now";
+  if (s < 60) return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  if (s < 7 * 86400) return `${Math.floor(s / 86400)}d ago`;
+  return formatDate(value.slice(0, 10));
+}

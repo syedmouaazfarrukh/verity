@@ -5,7 +5,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppShell } from "@/components/layout/app-shell";
 import { AuthProvider, RequireAuth } from "@/lib/auth";
 import { LoginPage } from "@/pages/login";
-import { KnowledgePage } from "@/pages/knowledge";
+import { AskPage } from "@/pages/ask";
+import { LibraryPage } from "@/pages/library";
+import { DashboardPage } from "@/pages/dashboard";
 import { DocumentPage } from "@/pages/document";
 import { UploadPage } from "@/pages/upload";
 import { IssuesPage } from "@/pages/issues";
@@ -26,7 +28,9 @@ export function App() {
                   </RequireAuth>
                 }
               >
-                <Route index element={<KnowledgePage />} />
+                <Route index element={<AskPage />} />
+                <Route path="/library" element={<LibraryPage />} />
+                <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/documents/:id" element={<DocumentPage />} />
                 <Route path="/upload" element={<UploadPage />} />
                 <Route path="/issues" element={<IssuesPage />} />

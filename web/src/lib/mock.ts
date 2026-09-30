@@ -4,6 +4,8 @@
  */
 import type {
   Alternative,
+  Dashboard,
+  DashboardActivity,
   AnswerGraph,
   AnswerGraphNode,
   DocumentDetail,
@@ -121,6 +123,12 @@ const docs: MockDoc[] = [
     claims: [{ key: "max-face-value", value: "€10 per voucher" }],
   }),
   doc({
+    id: "doc-mobility-budget-be-v1", title: "Mobility budget — Belgium", topic_id: "mobility-budget",
+    topic_name: "Mobility budget", country: "BE", version: 1, updated_at: "2026-03-10", source: "notion",
+    source_detail: "Payroll wiki / Mobility budget", change_summary: "First version.",
+    claims: [{ key: "annual-budget", value: "20% of the annual company-car cost" }],
+  }),
+  doc({
     id: "doc-sick-leave-be-v1", title: "Sick-leave reporting — Belgium", topic_id: "sick-leave-reporting",
     topic_name: "Sick-leave reporting", country: "BE", version: 1, department: "hr", owner: "Pieter Janssens",
     updated_by: "Pieter Janssens", updated_at: "2026-02-03", review_by: "2026-06-01", change_summary: "Initial version.",
@@ -160,6 +168,16 @@ let issues: Issue[] = [
 let nextIssue = 3;
 
 const SLA_H: Record<Level, number> = { critical: 24, high: 72, medium: 168, low: 720 };
+
+/** Upload / resolve events for the dashboard feed (the seed "published" events are synthesised). */
+interface AuditEntry extends DashboardActivity {
+  document_id: string;
+}
+const audit: AuditEntry[] = [];
+let nextAudit = 1;
+function record(e: Omit<AuditEntry, "id" | "at">) {
+  audit.push({ id: `audit-${nextAudit++}`, at: new Date().toISOString(), ...e });
+}
 
 async function sha256(text: string): Promise<string> {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
@@ -290,6 +308,20 @@ async function handleUpload(init: RequestInit): Promise<Response> {
     outcome = "superseded_previous";
   }
   docs.push(d);
+  const conflict = found.find((i) => i.rule === "conflict");
+  const worst = found.find((i) => i.level === "critical" || i.level === "high");
+  record({
+    actor: user.display_name, kind: "uploaded", document_id: d.id, source: d.source,
+    outcome: outcome === "blocked" ? "blocked" : "live",
+    text:
+      outcome === "blocked"
+        ? `${user.display_name} uploaded '${d.title}' → blocked (${worst?.level ?? "open"} ${
+            conflict ? `conflict: ${conflict.new_value} vs ${conflict.existing_value}` : (worst?.rule ?? "issue").replace(/-/g, " ")
+          }).`
+        : outcome === "superseded_previous"
+          ? `${user.display_name} uploaded '${d.title}' v${d.version} → live, replacing v${live?.version}.`
+          : `${user.display_name} uploaded '${d.title}' → live.`,
+  });
   return json(200, { document: summary(d), issues: found, outcome });
 }
 
@@ -488,6 +520,79 @@ function topicGraph(topic: string) {
   return { nodes: [...nodes.values()], edges };
 }
 
+// ---------------------------------------------------------------- topics + dashboard (v3 D, v3.1)
+
+function scopedTopics(): Topic[] {
+  const ids = [...new Set(docs.filter(inScope).map((d) => d.topic_id))];
+  return ids.map((id) => {
+    const tdocs = docs.filter((d) => d.topic_id === id && inScope(d));
+    const open = issues.filter((i) => i.status === "open" && tdocs.some((d) => d.id === i.document_id));
+    const counts = { critical: 0, high: 0, medium: 0, low: 0 } as Record<Level, number>;
+    open.forEach((i) => counts[i.level]++);
+    return {
+      id,
+      name: tdocs[0].topic_name,
+      live_documents: tdocs
+        .filter((d) => d.status === "live")
+        .map((d) => ({ id: d.id, title: d.title, country: d.country, version: d.version, updated_at: d.updated_at, updated_by: d.updated_by })),
+      open_issues: counts,
+      trust: counts.critical ? "red" : counts.high || counts.medium ? "amber" : "green",
+    };
+  });
+}
+
+const COMING_SOON: [string, string][] = [
+  ["email", "Gmail"], ["slack", "Slack"], ["github", "GitHub"], ["notion", "Notion"],
+  ["sharepoint", "SharePoint"], ["google-drive", "Google Drive"], ["teams", "Microsoft Teams"],
+];
+
+function dashboard(): Dashboard {
+  const scoped = docs.filter(inScope);
+  const count = (s: string) => scoped.filter((d) => d.status === s).length;
+  const openIssues = issues.filter((i) => {
+    const d = docs.find((x) => x.id === i.document_id);
+    return i.status === "open" && d && inScope(d);
+  });
+  const open = { critical: 0, high: 0, medium: 0, low: 0 } as Record<Level, number>;
+  openIssues.forEach((i) => open[i.level]++);
+  const next = [...openIssues].sort((a, b) => a.due_at.localeCompare(b.due_at))[0];
+  const topics = { green: 0, amber: 0, red: 0 };
+  scopedTopics().forEach((t) => topics[t.trust]++);
+
+  const uploadedIds = new Set(audit.filter((a) => a.kind === "uploaded").map((a) => a.document_id));
+  const published: DashboardActivity[] = scoped
+    .filter((d) => !uploadedIds.has(d.id))
+    .map((d) => ({
+      id: `published-${d.id}`, at: `${d.updated_at}T09:00:00Z`, actor: d.updated_by, kind: "published",
+      text: `${d.updated_by} published '${d.title}' v${d.version}.`, document_id: d.id, source: d.source,
+      outcome: null,
+    }));
+  const events = audit.filter((a) => {
+    const d = docs.find((x) => x.id === a.document_id);
+    return d && inScope(d);
+  });
+  const activity = [...events, ...published].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 25);
+  const lastAt = scoped.map((d) => d.created_at).sort().at(-1) ?? null;
+
+  return {
+    totals: { documents: scoped.length, live: count("live"), blocked: count("blocked"), superseded: count("superseded"), rejected: count("rejected") },
+    sources: [
+      { id: "upload", label: "Upload", status: "live", documents: scoped.length, live: count("live"), blocked: count("blocked"), last_at: lastAt },
+      ...COMING_SOON.map(([id, label]) => ({ id, label, status: "coming_soon" as const })),
+    ],
+    issues: {
+      open,
+      overdue: openIssues.filter((i) => new Date(i.due_at).getTime() < Date.now()).length,
+      next_due: next
+        ? { id: next.id, document_id: next.document_id, document_title: next.document_title, level: next.level, due_at: next.due_at }
+        : null,
+    },
+    topics,
+    activity,
+    generated_at: new Date().toISOString(),
+  };
+}
+
 // ---------------------------------------------------------------- router
 
 export async function mockFetch(path: string, init: RequestInit): Promise<Response> {
@@ -515,25 +620,8 @@ export async function mockFetch(path: string, init: RequestInit): Promise<Respon
 
   if (p === "/me") return json(200, session);
 
-  if (p === "/topics") {
-    const ids = [...new Set(docs.filter(inScope).map((d) => d.topic_id))];
-    const topics: Topic[] = ids.map((id) => {
-      const tdocs = docs.filter((d) => d.topic_id === id && inScope(d));
-      const open = issues.filter((i) => i.status === "open" && tdocs.some((d) => d.id === i.document_id));
-      const counts = { critical: 0, high: 0, medium: 0, low: 0 } as Record<Level, number>;
-      open.forEach((i) => counts[i.level]++);
-      return {
-        id,
-        name: tdocs[0].topic_name,
-        live_documents: tdocs
-          .filter((d) => d.status === "live")
-          .map((d) => ({ id: d.id, title: d.title, country: d.country, version: d.version, updated_at: d.updated_at, updated_by: d.updated_by })),
-        open_issues: counts,
-        trust: counts.critical ? "red" : counts.high || counts.medium ? "amber" : "green",
-      };
-    });
-    return json(200, topics);
-  }
+  if (p === "/topics") return json(200, scopedTopics());
+  if (p === "/dashboard") return json(200, dashboard());
   if (p === "/documents" && method === "GET") return json(200, docs.filter(inScope).map(summary));
   if (p === "/documents" && method === "POST") return handleUpload(init);
   const dm = /^\/documents\/(.+)$/.exec(p);
@@ -569,6 +657,14 @@ export async function mockFetch(path: string, init: RequestInit): Promise<Respon
       d.status = "rejected";
       issues = issues.map((i) => (i.id === issue.id ? { ...i, ...resolvedFields } : i));
     }
+    record({
+      actor: session.display_name, kind: "resolved", document_id: d.id, source: null,
+      outcome: d.status === "live" ? "live" : null,
+      text:
+        d.status === "live"
+          ? `${session.display_name} accepted '${d.title}' → live.`
+          : `${session.display_name} kept the existing document and rejected '${d.title}'.`,
+    });
     return json(200, { issue: issues.find((i) => i.id === issue.id), document: summary(d) });
   }
   if (p === "/chat") return handleChat(String(body?.question ?? ""));

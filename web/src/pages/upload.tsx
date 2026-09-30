@@ -9,9 +9,8 @@ import { IssueCard } from "@/components/verity/issue-card";
 import { PageHeader } from "@/components/verity/states";
 import { api, notifyIssuesChanged, type UploadResult } from "@/lib/api";
 import { formatDate, LEVEL_ORDER } from "@/lib/format";
+import { checkUploadFile, UPLOAD_ACCEPT } from "@/lib/upload";
 import { cn } from "@/lib/utils";
-
-const MAX_BYTES = 200 * 1024;
 
 export function UploadPage() {
   const [dragging, setDragging] = React.useState(false);
@@ -25,12 +24,9 @@ export function UploadPage() {
     if (!f) return;
     setError(null);
     setResult(null);
-    if (!/\.(md|txt)$/i.test(f.name)) {
-      setError("Only .md or .txt files can be uploaded.");
-      return;
-    }
-    if (f.size > MAX_BYTES) {
-      setError("That file is larger than 200 KB.");
+    const problem = checkUploadFile(f);
+    if (problem) {
+      setError(problem);
       return;
     }
     setFile(f);
@@ -112,7 +108,7 @@ export function UploadPage() {
           <input
             ref={inputRef}
             type="file"
-            accept=".md,.txt,text/markdown,text/plain"
+            accept={UPLOAD_ACCEPT}
             className="hidden"
             onChange={(e) => void handleFile(e.target.files?.[0])}
           />

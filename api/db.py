@@ -20,7 +20,8 @@ REPO_ROOT = API_DIR.parent
 
 COUNTRIES = ("BE", "NL", "FR", "DE", "ALL")
 DEPARTMENTS = ("payroll", "hr", "finance")
-SOURCES = ("upload", "email", "google-drive", "sharepoint", "git", "teams")
+# Provenance tags from front-matter ("originally from ..."). Only `upload` is a real connector.
+SOURCES = ("upload", "email", "slack", "github", "notion", "sharepoint", "google-drive", "git", "teams")
 # Bump when the schema changes: an older database file is moved aside and re-seeded on start.
 SCHEMA_VERSION = 2
 LEVEL_RANK = {"critical": 0, "high": 1, "medium": 2, "low": 3}

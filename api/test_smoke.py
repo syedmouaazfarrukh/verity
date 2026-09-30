@@ -193,6 +193,71 @@ def test_noor_sees_finance_but_not_payroll(app):
     assert payroll["document"] is None
 
 
+# ---------------------------------------------------------------- dashboard
+
+SOURCE_ORDER = ["upload", "email", "slack", "github", "notion", "sharepoint", "google-drive", "teams"]
+
+
+def test_dashboard_requires_session(app):
+    r = TestClient(app).get("/api/dashboard")
+    assert r.status_code == 401 and isinstance(r.json()["detail"], str)
+
+
+def _dash_matches_documents(c: TestClient) -> dict:
+    dash = c.get("/api/dashboard").json()
+    docs = c.get("/api/documents").json()
+    t = dash["totals"]
+    assert t["documents"] == len(docs)
+    for status in ("live", "blocked", "superseded", "rejected"):
+        assert t[status] == sum(d["status"] == status for d in docs), status
+    upload = dash["sources"][0]
+    assert (upload["documents"], upload["live"], upload["blocked"]) == (t["documents"], t["live"], t["blocked"])
+    return dash
+
+
+def test_dashboard_scope_and_sources(app):
+    sofie = client_for(app, "sofie")
+    dash = _dash_matches_documents(sofie)
+    assert set(dash) == {"totals", "sources", "issues", "topics", "activity", "generated_at"}
+    assert [s["id"] for s in dash["sources"]] == SOURCE_ORDER
+    upload, *soon = dash["sources"]
+    assert upload["label"] == "Upload" and upload["status"] == "live" and upload["last_at"]
+    assert [s["label"] for s in soon] == ["Gmail", "Slack", "GitHub", "Notion", "SharePoint", "Google Drive",
+                                          "Microsoft Teams"]
+    assert all(s == {"id": s["id"], "label": s["label"], "status": "coming_soon"} for s in soon)
+    # Scope: the finance doc is never counted or mentioned for sofie.
+    blob = str(dash)
+    assert FINANCE_DOC not in blob and "Client credit notes" not in blob and "Noor" not in blob
+    assert all(a["document_id"] != FINANCE_DOC for a in dash["activity"])
+    topics = sofie.get("/api/topics").json()
+    assert sum(dash["topics"].values()) == len(topics)
+    for trust in ("green", "amber", "red"):
+        assert dash["topics"][trust] == sum(t["trust"] == trust for t in topics), trust
+    open_issues = sofie.get("/api/issues?status=open").json()
+    assert sum(dash["issues"]["open"].values()) == len(open_issues)
+    assert dash["issues"]["next_due"]["id"] == min(open_issues, key=lambda i: i["due_at"])["id"]
+    # Seed documents appear once each as a synthetic "published" event, newest first, max 25.
+    acts = dash["activity"]
+    assert 0 < len(acts) <= 25 and [a["at"] for a in acts] == sorted((a["at"] for a in acts), reverse=True)
+    assert {a["kind"] for a in acts} <= {"published", "uploaded", "resolved", "blocked", "live", "superseded"}
+    mob = next(a for a in acts if a["id"] == "seed-doc-mobility-budget-be-v1")
+    assert mob["kind"] == "published" and mob["source"] == "notion" and mob["outcome"] is None
+    assert mob["text"] == "Lies Vermeulen published 'Mobility budget — Belgium' v1 from Notion."
+    assert all({"id", "at", "actor", "kind", "text", "document_id", "source", "outcome"} <= set(a) for a in acts)
+    pytest.sofie_upload_blocked = upload["blocked"]
+
+    noor = client_for(app, "noor")
+    nd = _dash_matches_documents(noor)
+    assert nd["totals"]["documents"] == 1 and nd["sources"][0]["documents"] == 1
+    assert [a["document_id"] for a in nd["activity"]] == [FINANCE_DOC]
+    assert "doc-hoa-be-v3" not in str(nd)
+    admin = _dash_matches_documents(client_for(app, "admin"))
+    assert admin["totals"]["documents"] == dash["totals"]["documents"] + 1 + sum(
+        d["country"] == "NL" for d in client_for(app, "daan").get("/api/documents").json())
+    # The emailed-note demo import was dropped (v3.1): no connector endpoints.
+    assert sofie.post("/api/connectors/email/demo-import", headers=H).status_code == 404
+
+
 def test_consultant_cannot_read_audit(app):
     assert client_for(app, "sofie").get("/api/audit").status_code == 403
     assert client_for(app, "lies").get("/api/audit?limit=5").status_code == 200
@@ -243,6 +308,19 @@ def test_upload_conflict_is_critical_and_blocked(app):
     assert due - created == timedelta(hours=24) and conflicts[0]["overdue"] is False
     pytest.conflict_doc = body["document"]["id"]
     pytest.conflict_issue = conflicts[0]["id"]
+
+
+def test_dashboard_shows_blocked_upload(app):
+    dash = _dash_matches_documents(client_for(app, "sofie"))
+    assert dash["sources"][0]["blocked"] == pytest.sofie_upload_blocked + 1
+    item = next(a for a in dash["activity"] if a["document_id"] == pytest.conflict_doc)
+    assert item["kind"] == "uploaded" and item["outcome"] == "blocked" and item["source"] == "email"
+    assert item["actor"] == "Sofie Claes" and item["id"].startswith("audit-")
+    assert item["text"] == ("Sofie Claes uploaded 'Home-office allowance — note forwarded by email' from Email "
+                            "→ blocked (critical conflict: €130 vs €150).")
+    assert dash["activity"][0] == item  # newest first
+    # daan (NL) never hears about it.
+    assert pytest.conflict_doc not in str(client_for(app, "daan").get("/api/dashboard").json())
 
 
 def test_chat_details_alternatives_provenance_graph(app):
@@ -468,6 +546,19 @@ def test_owner_resolves_accept_new(app):
     assert "resolve:accept_new" in actions and "resolve:keep_existing" in actions
 
 
+def test_dashboard_resolution_activity(app):
+    acts = client_for(app, "lies").get("/api/dashboard").json()["activity"]
+    resolved = [a for a in acts if a["kind"] == "resolved"]
+    accepted = next(a for a in resolved if a["document_id"] == pytest.conflict_doc)
+    assert accepted["text"] == ("Lies Vermeulen accepted the new version of 'Home-office allowance — note forwarded "
+                                "by email' (note: Client-specific cap confirmed).")
+    assert accepted["outcome"] == "live"
+    kept = next(a for a in resolved if "kept the existing version of" in a["text"])
+    assert kept["text"].startswith("Lies Vermeulen kept the existing version of '") and kept["outcome"] is None
+    assert kept["text"].endswith("(note: Copy of the live guidance).")
+    assert not any(a["kind"] in ("imported",) or "login" in a["text"] for a in acts)
+
+
 def test_unknown_api_route_is_json_404(app):
     r = client_for(app, "sofie").get("/api/nope")
     assert r.status_code == 404 and r.json() == {"detail": "Not found."}
@@ -623,3 +714,12 @@ def test_grounding_rejects_answer_without_the_given_fact():
     assert not is_grounded(bad, doc, facts)
     assert is_grounded(good, doc, facts)
     assert is_grounded("The owner is Pieter Janssens.", doc, "Pieter Janssens")  # no numbers given: not required
+
+
+def test_identical_file_is_rejected_by_fingerprint(app):
+    """Dropping the same file twice must not create a second blocked copy: the fingerprint already exists."""
+    c = client_for(app, "lies")
+    first = upload(c, "2-duplicate-meal-vouchers-be.md")
+    assert first.status_code in (200, 409), first.text  # may already exist from an earlier test
+    again = upload(c, "2-duplicate-meal-vouchers-be.md")
+    assert again.status_code == 409 and "already in Verity" in again.json()["detail"], again.text

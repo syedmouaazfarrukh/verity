@@ -37,6 +37,7 @@ from auth import (
 )
 from answer_details import answer_details
 from chat import answer_question, receipt_payload
+from dashboard import dashboard
 from crypto_helpers import load_or_create_keypair, public_key_b64, sha256_hex, verify
 from db import (
     REPO_ROOT,
@@ -377,6 +378,18 @@ async def upload_document(file: UploadFile = File(...), user: User = Depends(cur
     if meta["department"] not in user.get("departments", []):
         raise HTTPException(status_code=403, detail=f"You can't publish to the {meta['department']} department.")
 
+    # Same fingerprint as a document already in the space: nothing new to check. Only in-scope documents are
+    # compared, so this never reveals anything outside the uploader's countries/departments.
+    fingerprint = hashlib.sha256(meta["content_md"].encode("utf-8")).hexdigest()
+    with get_conn() as conn:
+        clause, params = scope_sql(user)
+        same = conn.execute(
+            f"SELECT d.title, d.version FROM documents d WHERE d.sha256 = ? AND {clause} LIMIT 1",
+            [fingerprint, *params]).fetchone()
+    if same:
+        raise HTTPException(status_code=409,
+                            detail=f"This exact file is already in Verity as '{same['title']}' (v{same['version']}).")
+
     # Runs synchronously in the threadpool (LLM extraction may take up to 15s).
     doc_id, outcome = await anyio.to_thread.run_sync(_ingest_sync, meta, stem, user)
     with get_conn() as conn:
@@ -606,6 +619,13 @@ def audit_log(limit: int = Query(50, ge=1, le=500), user: User = Depends(current
             [*params, limit],
         ).fetchall()
     return [dict(r) for r in rows]
+
+
+@app.get("/api/dashboard")
+def get_dashboard(user: User = Depends(current_user)) -> dict:
+    """Scoped totals, the Upload door + coming-soon sources, issue health and activity (polled every 3s)."""
+    with get_conn() as conn:
+        return dashboard(conn, user)
 
 
 # ---------------------------------------------------------------- web app (production)

@@ -11,7 +11,15 @@ export type DocStatus = "live" | "blocked" | "superseded" | "rejected";
 /** v2: second scope dimension. Known values: payroll | hr | finance. */
 export type Department = "payroll" | "hr" | "finance" | (string & {});
 /** v2 D: where a document came from. */
-export type DocSource = "upload" | "email" | "google-drive" | "sharepoint" | "git" | "teams" | (string & {});
+export type DocSource =
+  | "upload"
+  | "email"
+  | "google-drive"
+  | "sharepoint"
+  | "git"
+  | "teams"
+  | "notion"
+  | (string & {});
 
 export interface User {
   username: string;
@@ -228,6 +236,56 @@ export interface GraphResponse {
   edges: GraphEdge[];
 }
 
+// ---------------------------------------------------------------- dashboard (v3 D + v3.1)
+
+/** Upload is the only real ingestion path; it carries every in-scope document. */
+export interface DashboardUploadSource {
+  id: "upload";
+  label: string;
+  status: "live";
+  documents: number;
+  live: number;
+  blocked: number;
+  last_at: string | null;
+}
+
+/** Roadmap connectors: id/label/status only, never numbers. */
+export interface DashboardComingSoonSource {
+  id: string;
+  label: string;
+  status: "coming_soon";
+}
+
+export type DashboardSource = DashboardUploadSource | DashboardComingSoonSource;
+
+export type ActivityKind = "published" | "uploaded" | "blocked" | "live" | "resolved" | "superseded";
+
+export interface DashboardActivity {
+  id: string;
+  at: string;
+  actor: string;
+  kind: ActivityKind | (string & {});
+  /** Plain-English one-liner. */
+  text: string;
+  document_id: string | null;
+  source: string | null;
+  outcome: "live" | "blocked" | null;
+}
+
+export interface Dashboard {
+  totals: { documents: number; live: number; blocked: number; superseded: number; rejected: number };
+  sources: DashboardSource[];
+  issues: {
+    open: Record<Level, number>;
+    overdue: number;
+    next_due: { id: number | string; document_id: string; document_title: string; level: Level; due_at: string } | null;
+  };
+  topics: Record<Trust, number>;
+  /** Newest first, max 25. */
+  activity: DashboardActivity[];
+  generated_at: string;
+}
+
 export class ApiError extends Error {
   status: number;
   constructor(status: number, message: string) {
@@ -345,10 +403,11 @@ export const api = {
     return request<DocumentSummary[]>(`/documents${qs ? `?${qs}` : ""}`, { silent: true });
   },
   document: (id: string) => request<DocumentDetail>(`/documents/${encodeURIComponent(id)}`, { silent: true }),
-  upload: (file: File) => {
+  /** `silent`: the caller renders the error inline (e.g. the dashboard drop zone). */
+  upload: (file: File, opts: { silent?: boolean } = {}) => {
     const fd = new FormData();
     fd.append("file", file);
-    return request<UploadResult>("/documents", { method: "POST", body: fd });
+    return request<UploadResult>("/documents", { method: "POST", body: fd, silent: opts.silent });
   },
   issues: (status: "open" | "resolved" = "open") =>
     request<Issue[]>(`/issues?status=${status}`, { silent: true }),
@@ -360,6 +419,7 @@ export const api = {
   chat: (question: string) => request<ChatResponse>("/chat", { method: "POST", body: { question } }),
   verifyReceipt: (id: string) =>
     request<VerifyResponse>(`/receipts/${encodeURIComponent(id)}/verify`, { silent: true }),
+  dashboard: () => request<Dashboard>("/dashboard", { silent: true }),
   /** No topic: the topic map. With a topic id: that topic's documents, owners and countries. */
   graph: (topic?: string) =>
     request<GraphResponse>(topic ? `/graph?topic=${encodeURIComponent(topic)}` : "/graph", { silent: true }),

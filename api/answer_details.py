@@ -22,6 +22,7 @@ BLOCKING = ("critical", "high")
 SOURCE_LABELS = {
     "upload": "Upload", "email": "Email", "google-drive": "Google Drive",
     "sharepoint": "SharePoint", "git": "Git", "teams": "Teams",
+    "notion": "Notion", "slack": "Slack", "github": "GitHub",
 }
 EVENT_ORDER = {"created": 0, "checked": 1, "flagged": 2, "resolved": 3, "live": 4, "superseded_previous": 5}
 
