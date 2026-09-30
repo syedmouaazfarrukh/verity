@@ -1,0 +1,126 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* Verity design tokens
+   HSL channels (no hsl() wrapper) so Tailwind utilities can compose.
+   All values translate directly from Tailwind's zinc / indigo / emerald / amber / rose. */
+
+@layer base {
+  :root {
+    /* Light mode — restrained zinc neutrals */
+    --background: 0 0% 98%;            /* zinc-50  */
+    --foreground: 240 10% 9%;          /* zinc-900 */
+
+    --card: 0 0% 100%;                 /* white    */
+    --card-foreground: 240 10% 9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 9%;
+
+    --muted: 240 5% 96%;               /* zinc-100 */
+    --muted-foreground: 240 4% 46%;    /* zinc-500 */
+
+    --border: 240 6% 90%;              /* zinc-200 */
+    --input: 240 6% 90%;
+    --ring: 239 84% 60%;               /* indigo-600 — focus ring */
+
+    --primary: 239 84% 60%;            /* indigo-600 */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 10% 9%;
+
+    --accent: 240 5% 96%;
+    --accent-foreground: 240 10% 9%;
+
+    --destructive: 0 72% 51%;          /* red-600 */
+    --destructive-foreground: 0 0% 100%;
+
+    /* Trust semantic: ok = green/live, warn = amber, danger = red */
+    --ok: 160 84% 39%;          /* emerald-500 */
+    --ok-foreground: 158 64% 22%; /* emerald-800 */
+    --ok-tint: 152 81% 96%;     /* emerald-50 */
+
+    --warn: 38 92% 50%;             /* amber-500 */
+    --warn-foreground: 23 83% 31%;  /* amber-800 */
+    --warn-tint: 48 100% 96%;       /* amber-50 */
+
+    --danger: 351 83% 61%;            /* rose-500 */
+    --danger-foreground: 350 75% 30%; /* rose-800 */
+    --danger-tint: 356 100% 97%;      /* rose-50 */
+
+    --unknown: 240 5% 65%;             /* zinc-400 */
+    --unknown-foreground: 240 4% 46%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 240 10% 4%;          /* zinc-950 */
+    --foreground: 0 0% 98%;
+
+    --card: 240 6% 10%;                /* zinc-900 */
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 6% 10%;
+    --popover-foreground: 0 0% 98%;
+
+    --muted: 240 4% 16%;               /* zinc-800 */
+    --muted-foreground: 240 5% 65%;    /* zinc-400 */
+
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
+    --ring: 234 89% 74%;               /* indigo-400 */
+
+    --primary: 234 89% 74%;
+    --primary-foreground: 240 10% 9%;
+
+    --secondary: 240 4% 16%;
+    --secondary-foreground: 0 0% 98%;
+
+    --accent: 240 4% 16%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 63% 51%;
+    --destructive-foreground: 0 0% 98%;
+
+    --ok: 160 84% 39%;
+    --ok-foreground: 152 81% 96%;
+    --ok-tint: 158 64% 12%;
+
+    --warn: 38 92% 50%;
+    --warn-foreground: 48 100% 96%;
+    --warn-tint: 23 83% 14%;
+
+    --danger: 351 83% 61%;
+    --danger-foreground: 356 100% 97%;
+    --danger-tint: 350 75% 14%;
+
+    --unknown: 240 5% 65%;
+    --unknown-foreground: 240 4% 46%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "cv11", "ss01", "ss03";
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  /* Subtle dot grid for the graph view background — referenced via .bg-dot-grid */
+  .bg-dot-grid {
+    background-image: radial-gradient(circle, hsl(var(--border)) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+}

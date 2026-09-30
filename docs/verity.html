@@ -1,0 +1,340 @@
+<meta charset="utf-8">
+<title>Verity for SD Worx</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column (60rem) with full-width figures and tables; steel-blue accent, green/amber/red only for trust state. */
+:root{
+  --bg:#F4F7F6; --surface:#FFFFFF; --ink:#13232A; --muted:#566870; --line:#D3DDDB;
+  --accent:#1E5E8E; --acc-bg:#E6EFF7;
+  --ok:#1D7550; --ok-bg:#E4F3EB; --warn:#9A6200; --warn-bg:#FBF0DA; --bad:#AE3636; --bad-bg:#FAE8E6;
+  --code-bg:#EDF2F1;
+  --sans:"Instrument Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E1618; --surface:#162125; --ink:#E3EBEA; --muted:#93A5A9; --line:#2A3B3F;
+  --accent:#72AEE0; --acc-bg:#16293A;
+  --ok:#52C590; --ok-bg:#12291F; --warn:#E3A845; --warn-bg:#2E2412; --bad:#F08080; --bad-bg:#321A1A;
+  --code-bg:#121C1F; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1618; --surface:#162125; --ink:#E3EBEA; --muted:#93A5A9; --line:#2A3B3F;
+  --accent:#72AEE0; --acc-bg:#16293A;
+  --ok:#52C590; --ok-bg:#12291F; --warn:#E3A845; --warn-bg:#2E2412; --bad:#F08080; --bad-bg:#321A1A;
+  --code-bg:#121C1F; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 16px/1.6 var(--sans);padding-inline:20px;padding-block:0 72px}
+main{max-width:60rem;margin:0 auto}
+h1,h2,h3{text-wrap:balance;line-height:1.2;margin:0}
+h1{font-size:clamp(2.2rem,6vw,3.2rem);font-weight:700;letter-spacing:-.025em}
+h2{font-size:1.55rem;font-weight:650;letter-spacing:-.01em}
+h3{font-size:1.08rem;font-weight:650}
+p{margin:0;max-width:66ch}
+code{font-family:var(--mono);font-size:.86em;background:var(--code-bg);padding:.1em .35em;border-radius:4px}
+.eyebrow{font:600 .75rem/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.muted{color:var(--muted)}
+section{display:flex;flex-direction:column;gap:18px;padding-block:42px;border-top:1px solid var(--line)}
+header.top{display:flex;flex-direction:column;gap:16px;padding-block:56px 34px}
+.tagline{font-size:1.25rem;font-weight:600;color:var(--accent)}
+.lede{font-size:1.1rem;max-width:62ch}
+.meta{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:.88rem;color:var(--muted)}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.9rem}
+nav.toc a{text-decoration:none;color:var(--muted)} nav.toc a:hover,nav.toc a:focus-visible{color:var(--accent);text-decoration:underline}
+a{color:var(--accent)} a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tag{display:inline-flex;align-items:center;font:600 .74rem/1 var(--sans);letter-spacing:.04em;padding:5px 9px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.tag.ok{color:var(--ok);background:var(--ok-bg)} .tag.warn{color:var(--warn);background:var(--warn-bg)} .tag.bad{color:var(--bad);background:var(--bad-bg)} .tag.acc{color:var(--accent);background:var(--acc-bg)}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+@media (max-width:760px){.grid3,.grid2{grid-template-columns:1fr}}
+.pull{border-left:3px solid var(--accent);padding:4px 0 4px 16px;font-size:1.08rem;max-width:62ch}
+figure{margin:0;display:flex;flex-direction:column;gap:10px}
+.fig-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px}
+.fig-wrap svg{display:block;width:100%;height:auto;min-width:700px;color:var(--muted)}
+figcaption{font-size:.9rem;color:var(--muted);max-width:70ch}
+.n{fill:var(--surface);stroke:var(--line);stroke-width:1.3}
+.n-ok{fill:var(--ok-bg);stroke:var(--ok)} .n-warn{fill:var(--warn-bg);stroke:var(--warn)} .n-bad{fill:var(--bad-bg);stroke:var(--bad)} .n-acc{fill:var(--acc-bg);stroke:var(--accent)} .n-soft{fill:var(--bg);stroke:var(--line)}
+.t{fill:var(--ink);font:500 12.5px var(--sans)} .tb{font-weight:650} .ts{fill:var(--muted);font-size:11.5px;font-weight:400}
+.tk{fill:var(--muted);font:600 10.5px var(--sans);letter-spacing:.09em}
+.t-ok{fill:var(--ok)} .t-warn{fill:var(--warn)} .t-bad{fill:var(--bad)} .t-acc{fill:var(--accent)}
+.e{stroke:var(--muted);stroke-width:1.4;fill:none} .e-ok{stroke:var(--ok)} .e-bad{stroke:var(--bad)}
+.m{fill:var(--muted)} .m-ok{fill:var(--ok)} .m-bad{fill:var(--bad)}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.92rem;min-width:620px}
+th,td{text-align:left;vertical-align:top;padding:11px 14px;border-bottom:1px solid var(--line)}
+th{font:600 .74rem/1.3 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--bg)}
+tr:last-child td{border-bottom:0}
+.num{font-variant-numeric:tabular-nums;font-family:var(--mono);font-size:.85rem;white-space:nowrap}
+.say{font-style:italic}
+ul.plain{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;max-width:68ch}
+.score{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.score .card b.pct{font:700 1.7rem/1 var(--sans);color:var(--accent);font-variant-numeric:tabular-nums}
+@media (max-width:760px){.score{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+
+<main>
+<header class="top">
+  <span class="eyebrow">Tectonic Hackathon · SD Worx challenge · Team brief</span>
+  <h1>Verity</h1>
+  <p class="tagline">One subject. One source. Always the latest.</p>
+  <p class="lede">Verity is the company's knowledge space with a gatekeeper built in. Every new document is checked against what already exists before anyone can rely on it. Every question is answered by pointing to the one latest document on that subject, with who changed it, what changed, and when.</p>
+  <div class="meta"><span>DashGen Solutions</span><span>30 September 2026</span><span>Built on the engine behind our Postura product</span></div>
+  <nav class="toc" aria-label="Sections">
+    <a href="#what">What</a><a href="#how">How it works</a><a href="#sla">Flags and SLAs</a><a href="#screens">Screens</a><a href="#why">Why this way</a><a href="#score">Scoring</a><a href="#different">How we're different</a><a href="#existing-tools">Existing tools</a><a href="#security">Security</a><a href="#video">Video script</a><a href="#status">Build status</a>
+  </nav>
+</header>
+
+<section id="what">
+  <span class="eyebrow">What we're building</span>
+  <h2>SD Worx's own problem, solved at the moment it happens</h2>
+  <p>SD Worx wrote the story for us. A consultant has an urgent client question. Search returns three documents: one recently updated, one with no owner, one for another country. A colleague then pastes something different from Teams. The information exists, but the consultant has no confidence in any of it.</p>
+  <p class="pull">Verity fixes this in two places. <b>At the door:</b> a document that clashes with the live one gets flagged before anyone can use it. <b>At the question:</b> the consultant gets one answer, from one document, and can see why it's the right one.</p>
+  <div class="grid3">
+    <div class="card"><span class="tag acc">1 · Knowledge space</span><p>All company knowledge, grouped by subject. Each subject has one live document per country, with a green, amber or red health dot.</p></div>
+    <div class="card"><span class="tag warn">2 · Check on upload</span><p>A new document is compared with the live one. Any clash is flagged with a level and a deadline to fix it, and the uploader sees exactly what's wrong.</p></div>
+    <div class="card"><span class="tag ok">3 · Ask Verity</span><p>A small chat on top of the space. It answers in a line and links to the latest document, showing what changed, when, and by whom.</p></div>
+  </div>
+</section>
+
+<section id="how">
+  <span class="eyebrow">How it works</span>
+  <h2>Two journeys</h2>
+  <h3>When someone uploads a document</h3>
+  <figure>
+    <div class="fig-wrap">
+      <svg viewBox="0 0 900 250" role="img" aria-label="Upload flow: a new document is read, compared with the live document on the same subject and country, then either goes live or is blocked with flags and SLA deadlines until an owner decides.">
+        <defs>
+          <marker id="u1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="m"/></marker>
+          <marker id="u2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="m-ok"/></marker>
+          <marker id="u3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="m-bad"/></marker>
+        </defs>
+        <rect class="n n-acc" x="10" y="95" width="150" height="60" rx="10"/><text class="t tb" x="26" y="120">New document</text><text class="t ts" x="26" y="139">uploaded by anyone</text>
+        <line class="e" x1="160" y1="125" x2="198" y2="125" marker-end="url(#u1)"/>
+        <rect class="n" x="200" y="95" width="160" height="60" rx="10"/><text class="t tb" x="216" y="120">Read the rules</text><text class="t ts" x="216" y="139">amounts, dates, codes</text>
+        <line class="e" x1="360" y1="125" x2="398" y2="125" marker-end="url(#u1)"/>
+        <rect class="n" x="400" y="95" width="180" height="60" rx="10"/><text class="t tb" x="416" y="120">Compare with live doc</text><text class="t ts" x="416" y="139">same subject + country</text>
+        <line class="e e-ok" x1="580" y1="112" x2="668" y2="45" marker-end="url(#u2)"/>
+        <text class="t ts t-ok" x="600" y="62">no clash</text>
+        <line class="e e-bad" x1="580" y1="138" x2="668" y2="200" marker-end="url(#u3)"/>
+        <text class="t ts t-bad" x="604" y="196">clash</text>
+        <rect class="n n-ok" x="670" y="15" width="220" height="60" rx="10"/><text class="t tb t-ok" x="686" y="40">Goes live</text><text class="t ts" x="686" y="59">old version kept in history</text>
+        <rect class="n n-bad" x="670" y="170" width="220" height="68" rx="10"/><text class="t tb t-bad" x="686" y="194">Blocked, with flags</text><text class="t ts" x="686" y="212">level + SLA deadline</text><text class="t ts" x="686" y="228">owner accepts or rejects</text>
+      </svg>
+    </div>
+    <figcaption>Nothing unchecked reaches the chat. A blocked document stays out of answers until the subject owner decides. The owner must write a note, which becomes part of the document's history.</figcaption>
+  </figure>
+  <h3>When someone asks a question</h3>
+  <figure>
+    <div class="fig-wrap">
+      <svg viewBox="0 0 900 170" role="img" aria-label="Question flow: the question is matched only against live documents the person is allowed to see; Verity answers in one line and links to that single document with its history and a signed receipt.">
+        <defs><marker id="q1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="m"/></marker></defs>
+        <rect class="n n-acc" x="10" y="50" width="170" height="68" rx="10"/><text class="tk" x="26" y="74">CONSULTANT ASKS</text><text class="t" x="26" y="94">"What's the home-office</text><text class="t" x="26" y="110">cap in Belgium?"</text>
+        <line class="e" x1="180" y1="84" x2="218" y2="84" marker-end="url(#q1)"/>
+        <rect class="n" x="220" y="50" width="190" height="68" rx="10"/><text class="t tb" x="236" y="76">Only live documents</text><text class="t ts" x="236" y="95">that this person is</text><text class="t ts" x="236" y="110">allowed to see</text>
+        <line class="e" x1="410" y1="84" x2="448" y2="84" marker-end="url(#q1)"/>
+        <rect class="n" x="450" y="50" width="170" height="68" rx="10"/><text class="t tb" x="466" y="76">One-line answer</text><text class="t ts" x="466" y="95">from that one</text><text class="t ts" x="466" y="110">document only</text>
+        <line class="e" x1="620" y1="84" x2="658" y2="84" marker-end="url(#q1)"/>
+        <rect class="n n-ok" x="660" y="30" width="230" height="108" rx="10"/><text class="t tb" x="676" y="55">The source document</text><text class="t ts" x="676" y="75">v3 · updated 12 Aug 2026</text><text class="t ts" x="676" y="92">by Lies Vermeulen</text><text class="t ts" x="676" y="109">"cap raised €140 → €150"</text><text class="t ts" x="676" y="126">+ signed receipt</text>
+      </svg>
+    </div>
+    <figcaption>The consultant can reply to the client straight away and knows why the answer holds. The signed receipt proves which version they relied on, in case the answer is questioned later.</figcaption>
+  </figure>
+</section>
+
+<section id="sla">
+  <span class="eyebrow">Flags and SLA levels</span>
+  <h2>What gets flagged, and how fast it must be fixed</h2>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Level</th><th>Flag</th><th>When it fires</th><th>Fix within</th><th>Can it be used?</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag bad">Critical</span></td><td>Conflict</td><td>Says something different from the live document on the same subject and country (e.g. €130 vs €150)</td><td class="num">24 hours</td><td>No, blocked</td></tr>
+      <tr><td><span class="tag bad">High</span></td><td>Duplicate</td><td>Repeats an existing document under a different name</td><td class="num">3 days</td><td>No, blocked</td></tr>
+      <tr><td><span class="tag bad">High</span></td><td>No owner</td><td>Nobody is responsible for keeping it right</td><td class="num">3 days</td><td>No, blocked</td></tr>
+      <tr><td><span class="tag warn">Medium</span></td><td>Older version</td><td>An older copy than the one already live</td><td class="num">7 days</td><td>Live doc unchanged</td></tr>
+      <tr><td><span class="tag warn">Medium</span></td><td>Review overdue</td><td>Past its review date</td><td class="num">7 days</td><td>Yes, with warning</td></tr>
+      <tr><td><span class="tag acc">Low</span></td><td>Missing details</td><td>No country or no start date</td><td class="num">30 days</td><td>Yes</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted">These checks are fixed rules, not AI guesses. AI only reads the document to pull out the amounts, dates and codes. The rules make the decision, so the same document always gets the same result, and anyone can see why.</p>
+</section>
+
+<section id="screens">
+  <span class="eyebrow">What you'll see</span>
+  <h2>Five screens</h2>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Screen</th><th>What's on it</th></tr></thead>
+    <tbody>
+      <tr><td><b>Knowledge space</b></td><td>The "Ask Verity" box at the top. Answer card with the source document, its version, who updated it, when and what changed, plus a signed receipt. Below: every subject with its health dot and open flags.</td></tr>
+      <tr><td><b>Document</b></td><td>The document itself, its owner and dates, and the version timeline ("v3 · 12 Aug 2026 · Lies Vermeulen: cap raised from €140 to €150"). Also its key rules and any open flags.</td></tr>
+      <tr><td><b>Upload</b></td><td>Drop a file and get the result: "Live" in green or "Blocked" in red, then each flag with its level, deadline countdown, and "Live document says / Your document says" side by side.</td></tr>
+      <tr><td><b>Review queue</b></td><td>All open flags by level, with countdowns. The subject owner picks "Accept new version" or "Keep existing" and adds a note.</td></tr>
+      <tr><td><b>Graph</b></td><td>Subjects, documents, owners and countries as a map. Red lines show conflicts, grey shows old versions. Built on Postura's graph screen.</td></tr>
+    </tbody>
+  </table></div>
+  <p>Five demo logins show that people only see what they should: <b>Sofie</b> (consultant, Belgium), <b>Daan</b> (consultant, Netherlands), <b>Lies</b> (payroll and HR owner), <b>Noor</b> (finance owner) and <b>Admin</b>.</p>
+</section>
+
+<section id="why">
+  <span class="eyebrow">Why we built it this way</span>
+  <h2>Stop bad knowledge at the door, not after the damage</h2>
+  <ul class="plain">
+    <li><b>Most tools clean up after the fact.</b> They search everything and hope the AI picks the right document. We check every document on the way in, so the space stays clean.</li>
+    <li><b>One source per subject removes the doubt.</b> If only one live document exists for "home-office allowance, Belgium", the consultant never has to choose.</li>
+    <li><b>People trust people.</b> Showing who changed it, what changed and when gives the consultant a reason to trust the answer. "The system says so" is not a reason.</li>
+    <li><b>Deadlines make ownership real.</b> An SLA level turns "someone should fix this" into "Lies must fix this within 24 hours".</li>
+    <li><b>It's proven.</b> The engine comes from Postura, our compliance product: read sources, check them with fixed rules, flag issues, sign the evidence. We pointed it at knowledge instead of security settings.</li>
+  </ul>
+</section>
+
+<section id="score">
+  <span class="eyebrow">How we score</span>
+  <h2>Mapped to the judging criteria</h2>
+  <div class="score">
+    <div class="card"><b class="pct">30%</b><h3>Originality</h3><p class="muted">Checking knowledge at the door and giving every answer a signed receipt. Nobody else will treat knowledge like an audit trail.</p></div>
+    <div class="card"><b class="pct">30%</b><h3>Technical ability</h3><p class="muted">It works end to end: upload, conflict check, SLA, owner decision, chat, graph, signed receipts, per-country access.</p></div>
+    <div class="card"><b class="pct">30%</b><h3>Fit to case</h3><p class="muted">Built on SD Worx's own story. Covers all four of their themes: Trust, Capture, Detect and Connect.</p></div>
+    <div class="card"><b class="pct">10%</b><h3>Security</h3><p class="muted">Login, per-country access checked on every request, safe uploads, no secrets in the code, and an Aikido scan before and after.</p></div>
+  </div>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>SD Worx asked</th><th>Verity answers with</th></tr></thead>
+    <tbody>
+      <tr><td>What is reliable?</td><td>A named owner, review dates, and a health dot on every subject</td></tr>
+      <tr><td>What is current?</td><td>One live version per subject and country; older versions kept in history</td></tr>
+      <tr><td>What applies in this context?</td><td>Documents are per country, and you only see the countries you work in</td></tr>
+      <tr><td>Where are the gaps?</td><td>The review queue, the red dots and the graph</td></tr>
+      <tr><td>Who has relevant expertise?</td><td>The owner and the person who last updated each document</td></tr>
+      <tr><td>Which answer should a person trust?</td><td>The single linked document, its change history and a signed receipt</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="different">
+  <span class="eyebrow">How we're different</span>
+  <h2>Most teams will build a chatbot. We built a gatekeeper.</h2>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th></th><th>Typical "chat with your documents"</th><th>Verity</th></tr></thead>
+    <tbody>
+      <tr><td>New documents</td><td>Added to the pile</td><td>Checked against what's live; conflicts blocked with a deadline</td></tr>
+      <tr><td>Answer comes from</td><td>A blend of several documents</td><td>One live document, linked</td></tr>
+      <tr><td>Why trust it</td><td>"The AI said so"</td><td>Who changed it, what changed, when, plus a signed receipt</td></tr>
+      <tr><td>Who decides what's true</td><td>The AI</td><td>Fixed rules and a named owner. AI only reads and phrases</td></tr>
+      <tr><td>Country rules</td><td>Mixed up</td><td>Separated. A Dutch consultant never sees Belgian-only rules</td></tr>
+      <tr><td>Where it's weak</td><td>Invisible</td><td>Review queue, SLA countdowns and a graph of the whole space</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="existing-tools">
+  <span class="eyebrow">Existing tools</span>
+  <h2>"Doesn't Copilot already do this?" No, and we don't replace it.</h2>
+  <p>Good tools already exist for finding documents and answering from them. None of them checks whether a new document contradicts the one that's already live, per rule and per country, at the moment it's uploaded. That's the gap Verity fills.</p>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Tool</th><th>What it does well</th><th>What it doesn't do</th></tr></thead>
+    <tbody>
+      <tr><td>Microsoft 365 Copilot / SharePoint</td><td>Answers from files people can access; version history and approval flows</td><td>Doesn't notice that two files disagree. An old copy in another folder is just as "true" to it</td></tr>
+      <tr><td>Glean and other enterprise search</td><td>Searches across every app with permissions respected</td><td>Finds all the versions, but doesn't decide which one is right or stop a wrong one going in</td></tr>
+      <tr><td>Guru</td><td>Experts re-verify knowledge cards on a schedule</td><td>Checks on a calendar, not on upload. Doesn't compare rule values between documents or countries</td></tr>
+      <tr><td>Confluence / Notion (with AI)</td><td>Easy writing, page history, AI Q&amp;A</td><td>Anyone can publish a page that contradicts another one. Nobody gets flagged, and there's no deadline to fix it</td></tr>
+      <tr><td>Formal document control (QMS tools)</td><td>Strict approval, one controlled version</td><td>Heavy and slow. Built for regulated manufacturing, not a consultant's quick Teams note</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>How we position it:</strong> Verity is a trust layer in front of the tools SD Worx already uses. It decides which document is the live one, and only live documents go on to Copilot, search or chat. The same check can run on a SharePoint library or a Confluence space later. For the hackathon, Verity has its own upload so the demo is self-contained.</p>
+  <h3>Many sources, one door</h3>
+  <p>Documents arrive from everywhere: email forwards, Google Drive, SharePoint, Git, Teams, PDFs. Whatever the source, every document goes through the same check before anyone can rely on it. Verity records where it came from, who brought it in, and a fingerprint of its exact content, so any later change is visible.</p>
+  <figure>
+    <div class="fig-wrap">
+      <svg viewBox="0 0 900 290" role="img" aria-label="Documents from email, Google Drive, SharePoint, Git and Teams all pass through one Verity check, which records source, uploader and fingerprint. Clean documents join the live knowledge space that feeds chat, Copilot and search; clashing ones are blocked until the owner decides.">
+        <defs>
+          <marker id="s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="m"/></marker>
+          <marker id="s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="m-ok"/></marker>
+          <marker id="s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="m-bad"/></marker>
+        </defs>
+        <text class="tk" x="10" y="14">SOURCES</text>
+        <rect class="n n-acc" x="10" y="24" width="150" height="34" rx="8"/><text class="t tb" x="24" y="46">Upload (.md, .txt)</text>
+        <rect class="n n-soft" x="10" y="68" width="150" height="34" rx="8" stroke-dasharray="4 3"/><text class="t" x="24" y="90">Email forward</text>
+        <rect class="n n-soft" x="10" y="112" width="150" height="34" rx="8" stroke-dasharray="4 3"/><text class="t" x="24" y="134">Google Drive</text>
+        <rect class="n n-soft" x="10" y="156" width="150" height="34" rx="8" stroke-dasharray="4 3"/><text class="t" x="24" y="178">SharePoint</text>
+        <rect class="n n-soft" x="10" y="200" width="150" height="34" rx="8" stroke-dasharray="4 3"/><text class="t" x="24" y="222">Git</text>
+        <rect class="n n-soft" x="10" y="244" width="150" height="34" rx="8" stroke-dasharray="4 3"/><text class="t" x="24" y="266">Teams, PDF</text>
+        <line class="e" x1="160" y1="41" x2="298" y2="130" marker-end="url(#s1)"/>
+        <line class="e" x1="160" y1="85" x2="298" y2="138" marker-end="url(#s1)"/>
+        <line class="e" x1="160" y1="129" x2="298" y2="146" marker-end="url(#s1)"/>
+        <line class="e" x1="160" y1="173" x2="298" y2="154" marker-end="url(#s1)"/>
+        <line class="e" x1="160" y1="217" x2="298" y2="162" marker-end="url(#s1)"/>
+        <line class="e" x1="160" y1="261" x2="298" y2="170" marker-end="url(#s1)"/>
+        <rect class="n n-acc" x="300" y="92" width="220" height="118" rx="10"/>
+        <text class="t tb t-acc" x="316" y="118">One door: the Verity check</text>
+        <text class="t ts" x="316" y="140">records source + who brought it in</text>
+        <text class="t ts" x="316" y="158">fingerprint of the exact content</text>
+        <text class="t ts" x="316" y="176">compares rules per country</text>
+        <text class="t ts" x="316" y="194">checks department access</text>
+        <line class="e e-ok" x1="520" y1="130" x2="598" y2="92" marker-end="url(#s2)"/>
+        <text class="t ts t-ok" x="536" y="100">clean</text>
+        <line class="e e-bad" x1="520" y1="180" x2="598" y2="220" marker-end="url(#s3)"/>
+        <text class="t ts t-bad" x="534" y="218">clash</text>
+        <rect class="n n-ok" x="600" y="50" width="160" height="72" rx="10"/><text class="t tb t-ok" x="614" y="76">Live knowledge</text><text class="t ts" x="614" y="95">one live document</text><text class="t ts" x="614" y="111">per topic and country</text>
+        <rect class="n n-bad" x="600" y="190" width="160" height="60" rx="10"/><text class="t tb t-bad" x="614" y="215">Blocked</text><text class="t ts" x="614" y="234">until the owner decides</text>
+        <line class="e e-ok" x1="760" y1="86" x2="788" y2="86" marker-end="url(#s2)"/>
+        <rect class="n" x="790" y="50" width="100" height="72" rx="10"/><text class="t tb" x="802" y="76">Chat</text><text class="t ts" x="802" y="95">Copilot</text><text class="t ts" x="802" y="111">search</text>
+      </svg>
+    </div>
+    <figcaption>Solid box: works in the demo. Dashed boxes: connectors on the roadmap. In the demo, a document's front-matter says where it came from, e.g. the conflicting note is marked as "forwarded by email". The check itself is the same for every source, so each new connector is only plumbing.</figcaption>
+  </figure>
+  <p><strong>What makes it hard to copy in a weekend:</strong> the check works on the rules inside a document (cap, deadline, payslip code), not on whole-file similarity. It is also country-aware (BE vs NL vs ALL) and ends in a decision by a named owner, with an SLA and an audit trail. The AI only reads and phrases. It never decides what's true.</p>
+</section>
+
+<section id="security">
+  <span class="eyebrow">Security</span>
+  <h2>What we did, in plain words</h2>
+  <ul class="plain">
+    <li>Everyone logs in. Passwords are stored scrambled, never as plain text.</li>
+    <li>Each person only sees documents for their countries. The check runs on the server for every request, so changing a link or an ID doesn't reveal anything. This is exactly what Aikido tests.</li>
+    <li>Only knowledge owners can accept or reject flagged documents.</li>
+    <li><strong>The AI runs on-premise.</strong> A small open model runs in its own container next to Verity, with no connection to the outside. Documents and questions never go to OpenAI, Anthropic or any other AI provider. After the one-time model download, it works fully offline.</li><li>The AI only ever sees documents the person is allowed to see, and only the facts from the one document it's answering from.</li><li>A small model can make mistakes, so every AI answer is checked: each number in it must appear in the source document. If one doesn't, Verity shows the document's own words instead. Under every answer, the exact lines from the document are shown as quotes.</li>
+    <li>Uploads are limited to text files under 200 KB. Documents are displayed safely, so a document can't run code in the browser.</li>
+    <li>Repeated login attempts are slowed down. Session cookies can't be read by scripts. Protection against forged clicks is in place.</li>
+    <li>No passwords or keys in the code. We run the Aikido scan, fix what it finds, and submit screenshots from before and after.</li>
+  </ul>
+</section>
+
+<section id="video">
+  <span class="eyebrow">Recording</span>
+  <h2>Demo video script (under 3 minutes)</h2>
+  <p class="muted">Demo files are in <code>seed/uploads/</code>, numbered in the order you'll use them. The script uses files 1 and 3. Two extras, if there's time: <code>2-duplicate-meal-vouchers-be.md</code> (blocked as a duplicate) and <code>4-missing-metadata-parental-leave.md</code> (goes live with a low flag for missing country and date; upload it as <code>admin</code>, because a document with no country counts as company-wide). The password for all demo users is <code>verity-demo</code>.</p>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Time</th><th>On screen</th><th>Say</th></tr></thead>
+    <tbody>
+      <tr><td class="num">0:00</td><td>Title, then the SD Worx story</td><td class="say">"A client asks a payroll question. Search finds three documents and a Teams message. Which one do you trust? That's the problem SD Worx gave us."</td></tr>
+      <tr><td class="num">0:20</td><td>Log in as Sofie. Ask: "What's the home-office allowance cap in Belgium?"</td><td class="say">"One answer, worded by an AI that runs inside the company, and underneath it the exact lines from the document. Click Details: this is the source, this is how it became the source, and these are the three other documents we found and why we didn't use them. The graph shows the same thing at a glance."</td></tr>
+      <tr><td class="num">0:50</td><td>Hover the blocked FAQ in the list; it lights up in the graph. Then open the document and its version history</td><td class="say">"Every version, who changed it and why, and where it came from: SharePoint, Teams, email. No more guessing which copy is current."</td></tr>
+      <tr><td class="num">1:10</td><td>Upload <code>1-conflict-emailed-note-hoa-be.md</code></td><td class="say">"A colleague forwarded an email about this, and Sofie saves it as a document. Verity catches it: it says €130, the live document says €150. Critical, fix within 24 hours. It's blocked, so nobody can use it by mistake."</td></tr>
+      <tr><td class="num">1:40</td><td>Log in as Lies, open the Review queue, click Keep existing and add a note</td><td class="say">"The owner decides, with a reason on record. And a consultant can't sneak in a new version either: that goes to the owner first."</td></tr>
+      <tr><td class="num">1:55</td><td>Still as Lies, upload <code>3-new-version-mobility-budget-be.md</code></td><td class="say">"When the owner publishes a proper new version (the yearly cap goes from €16,000 to €16,500, with a change note), it goes straight live, and the old one moves to history."</td></tr>
+      <tr><td class="num">2:15</td><td>Graph screen</td><td class="say">"The whole knowledge space as a map of topics, not a hairball of a thousand documents. Click a topic to see its documents: red is a conflict, grey is history."</td></tr>
+      <tr><td class="num">2:30</td><td>Log in as Daan (Netherlands) and ask: "What&rsquo;s the home-office allowance?"</td><td class="say">"Daan works in the Netherlands, so he gets the Dutch rule, and Belgian documents never show up, not even in the details. The same goes for departments: Finance documents only exist for Finance. And no document ever leaves the company, because the AI runs on-premise."</td></tr>
+      <tr><td class="num">2:45</td><td>Close on the Knowledge space</td><td class="say">"Verity. One subject, one source, always the latest."</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="status">
+  <span class="eyebrow">Build status</span>
+  <h2>Where we are</h2>
+  <div class="grid2">
+    <div class="card"><span class="tag ok">Working now</span><ul class="plain">
+      <li>Answers worded by a small AI running on-premise (Qwen 2.5, 1.5B, in its own container). Each answer is checked against the document, with the exact lines quoted underneath</li>
+      <li>Details panel: the source, how it became the source, the other documents found and why they weren't used, the receipt, and a graph of the answer</li>
+      <li>Access by country and by department (Payroll, HR, Finance), enforced on the server for every request</li>
+      <li>Upload check, SLA flags, owner decisions, and signed receipts. Only owners can publish new versions directly</li>
+      <li>Topic-map graph with drill-down, plus source and fingerprint on every document</li>
+      <li>36 automated tests pass. The full video flow ran end to end on the Docker build, and the data is reset for recording</li>
+    </ul></div>
+    <div class="card"><span class="tag warn">Next</span><ul class="plain">
+      <li>Aikido scan, fixes, screenshots</li>
+      <li>Cloud deployment once you've picked where it goes</li>
+    </ul></div>
+  </div>
+  <p class="muted">All documents, people and amounts in the demo are fictional. None of it is real SD Worx policy.</p>
+</section>
+</main>

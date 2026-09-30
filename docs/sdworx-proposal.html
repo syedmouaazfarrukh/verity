@@ -1,0 +1,534 @@
+<meta charset="utf-8">
+<title>Postura Knowledge for SD Worx</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: single reading column (max 60rem) with full-width figures; semantic trust colours (ok / warn / bad) do the signalling, steel blue is the only accent. */
+:root{
+  --bg:#F4F7F6; --surface:#FFFFFF; --ink:#13232A; --muted:#566870; --line:#D3DDDB;
+  --accent:#1E5E8E; --acc-bg:#E6EFF7;
+  --ok:#1D7550; --ok-bg:#E4F3EB; --warn:#9A6200; --warn-bg:#FBF0DA; --bad:#AE3636; --bad-bg:#FAE8E6;
+  --code-bg:#EDF2F1;
+  --sans:"Instrument Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E1618; --surface:#162125; --ink:#E3EBEA; --muted:#93A5A9; --line:#2A3B3F;
+  --accent:#72AEE0; --acc-bg:#16293A;
+  --ok:#52C590; --ok-bg:#12291F; --warn:#E3A845; --warn-bg:#2E2412; --bad:#F08080; --bad-bg:#321A1A;
+  --code-bg:#121C1F; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1618; --surface:#162125; --ink:#E3EBEA; --muted:#93A5A9; --line:#2A3B3F;
+  --accent:#72AEE0; --acc-bg:#16293A;
+  --ok:#52C590; --ok-bg:#12291F; --warn:#E3A845; --warn-bg:#2E2412; --bad:#F08080; --bad-bg:#321A1A;
+  --code-bg:#121C1F; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 16px/1.6 var(--sans);padding-inline:20px;padding-block:0 72px}
+main{max-width:60rem;margin:0 auto}
+h1,h2,h3{text-wrap:balance;line-height:1.2;margin:0}
+h1{font-size:clamp(2rem,5vw,2.9rem);font-weight:700;letter-spacing:-.02em}
+h2{font-size:1.6rem;font-weight:650;letter-spacing:-.01em}
+h3{font-size:1.1rem;font-weight:650}
+p{margin:0;max-width:66ch}
+a{color:var(--accent)}
+code{font-family:var(--mono);font-size:.86em;background:var(--code-bg);padding:.1em .35em;border-radius:4px}
+.eyebrow{font:600 .75rem/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.muted{color:var(--muted)}
+.stack{display:flex;flex-direction:column;gap:14px}
+section{display:flex;flex-direction:column;gap:18px;padding-block:44px;border-top:1px solid var(--line)}
+header.top{display:flex;flex-direction:column;gap:16px;padding-block:56px 36px}
+.lede{font-size:1.15rem;max-width:62ch}
+.meta{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:.88rem;color:var(--muted)}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.9rem;padding-block:4px 8px}
+nav.toc a{text-decoration:none;color:var(--muted)} nav.toc a:hover,nav.toc a:focus-visible{color:var(--accent);text-decoration:underline}
+a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.verdict{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.verdict > div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.verdict .tag{align-self:flex-start}
+@media (max-width:760px){.verdict{grid-template-columns:1fr}}
+
+.tag{display:inline-flex;align-items:center;gap:6px;font:600 .74rem/1 var(--sans);letter-spacing:.04em;padding:5px 9px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.tag.ok{color:var(--ok);background:var(--ok-bg)} .tag.warn{color:var(--warn);background:var(--warn-bg)} .tag.bad{color:var(--bad);background:var(--bad-bg)} .tag.acc{color:var(--accent);background:var(--acc-bg)}
+
+.callout{border:1px solid var(--warn);background:var(--warn-bg);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+.callout strong{color:var(--warn)}
+
+figure{margin:0;display:flex;flex-direction:column;gap:10px}
+.fig-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px}
+.fig-wrap svg{display:block;width:100%;height:auto;min-width:720px;color:var(--muted)}
+figcaption{font-size:.9rem;color:var(--muted);max-width:70ch}
+.n{fill:var(--surface);stroke:var(--line);stroke-width:1.3}
+.n-ok{fill:var(--ok-bg);stroke:var(--ok)} .n-warn{fill:var(--warn-bg);stroke:var(--warn)} .n-bad{fill:var(--bad-bg);stroke:var(--bad)} .n-acc{fill:var(--acc-bg);stroke:var(--accent)} .n-soft{fill:var(--bg);stroke:var(--line)}
+.t{fill:var(--ink);font:500 12.5px var(--sans)} .tb{font-weight:650} .ts{fill:var(--muted);font-size:11.5px;font-weight:400}
+.tk{fill:var(--muted);font:600 10.5px var(--sans);letter-spacing:.09em}
+.t-ok{fill:var(--ok)} .t-warn{fill:var(--warn)} .t-bad{fill:var(--bad)} .t-acc{fill:var(--accent)}
+.e{stroke:var(--muted);stroke-width:1.4;fill:none} .e-bad{stroke:var(--bad)} .e-dash{stroke-dasharray:5 4} .e-acc{stroke:var(--accent)}
+.m{fill:var(--muted)} .m-bad{fill:var(--bad)} .m-acc{fill:var(--accent)}
+
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.92rem;min-width:640px}
+th,td{text-align:left;vertical-align:top;padding:11px 14px;border-bottom:1px solid var(--line)}
+th{font:600 .74rem/1.3 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--bg)}
+tr:last-child td{border-bottom:0}
+td code{white-space:nowrap}
+
+pre{margin:0;overflow-x:auto;background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:16px 18px;font:400 .84rem/1.6 var(--mono);color:var(--ink)}
+pre .c{color:var(--muted)} pre .k{color:var(--accent)}
+
+/* UI mock */
+.mock{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.mock-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--bg);font-size:.84rem}
+.mock-bar b{font-weight:650}
+.ctx{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:4px 9px}
+.ctx span{color:var(--muted)}
+.mock-body{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:0}
+.mock-main,.mock-side{padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.mock-side{border-left:1px solid var(--line);background:var(--bg)}
+@media (max-width:760px){.mock-body{grid-template-columns:1fr}.mock-side{border-left:0;border-top:1px solid var(--line)}}
+.q{font-size:1.05rem;font-weight:600}
+.banner{display:flex;gap:10px;align-items:flex-start;border-radius:8px;padding:10px 12px;font-size:.9rem;border:1px solid var(--warn);background:var(--warn-bg)}
+.banner b{color:var(--warn)}
+.answer{font-size:.98rem;border-left:3px solid var(--ok);padding-left:12px}
+sup.cite{font:600 .7rem var(--mono);color:var(--accent)}
+.src{display:flex;flex-direction:column;gap:4px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--surface);font-size:.87rem}
+.src-h{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+.src-h b{font-weight:650}
+.src q{font-family:var(--mono);font-size:.8rem;color:var(--muted);quotes:"\201C" "\201D"}
+.src-list{display:flex;flex-direction:column;gap:8px}
+.side-h{font:600 .72rem var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.person{display:flex;gap:10px;align-items:center;font-size:.88rem}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--acc-bg);color:var(--accent);display:grid;place-items:center;font-weight:700;font-size:.8rem;flex:none}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.btn{font:600 .84rem var(--sans);border-radius:7px;padding:8px 12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:default}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.receipt{font:500 .78rem var(--mono);color:var(--muted)}
+.demo-note{font-size:.78rem;color:var(--muted);padding:8px 16px;border-top:1px solid var(--line)}
+
+.slices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.slices > div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.slices ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:.92rem}
+@media (max-width:760px){.slices{grid-template-columns:1fr}}
+ol.decide{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px;max-width:70ch}
+.num{font-variant-numeric:tabular-nums;font-family:var(--mono);font-size:.85rem;white-space:nowrap}
+</style>
+
+<main>
+<header class="top">
+  <span class="eyebrow">Tectonic Hackathon · SD Worx track · Proposal</span>
+  <h1>Postura Knowledge</h1>
+  <p class="lede">We treat SD Worx's knowledge the way Postura treats a security estate. We collect it read-only, map it as a graph, and check it continuously with deterministic rules. Every answer ships with a signed receipt that shows why it can be trusted.</p>
+  <div class="meta"><span>DashGen Solutions</span><span>30 September 2026</span><span>Status: draft for team review</span></div>
+  <nav class="toc" aria-label="Sections">
+    <a href="#verdict">Verdict</a><a href="#doubt">Moment of doubt</a><a href="#engine">Same engine</a><a href="#experience">Experience</a><a href="#rules">Trust rules</a><a href="#path">Trust path</a><a href="#build">Architecture</a><a href="#reuse">Reuse from Postura</a><a href="#fit">Scoring fit</a><a href="#plan">Plan and demo</a><a href="#decide">Decisions</a>
+  </nav>
+</header>
+
+<section id="verdict">
+  <span class="eyebrow">Verdict</span>
+  <h2>Keep the engine, drop the cyber use case</h2>
+  <p>Postura answers "which parts of my environment fail which controls, and what is the evidence?" SD Worx's problem has the same shape: "which parts of our knowledge can I rely on for this client, and why?" The subject is different, so the compliance use case does not transfer. The mechanism does, and it is what makes our entry different from yet another RAG chatbot.</p>
+  <div class="verdict">
+    <div><span class="tag bad">Does not fit</span><h3>Reuse the cyber use case</h3><p class="muted">Identity and cloud misconfiguration findings do nothing for a payroll consultant who is unsure which document to trust.</p></div>
+    <div><span class="tag ok">Recommended</span><h3>Reuse the Postura pattern</h3><p class="muted">Read-only collectors, a graph, YAML rules that decide, an LLM that only writes, and signed evidence. Point all of it at knowledge sources.</p></div>
+    <div><span class="tag warn">Too much</span><h3>Fork the whole platform</h3><p class="muted">Nine services, Keycloak and cloud collectors. Too heavy for a hackathon, and the hackathon rules may not allow pre-built code (see below).</p></div>
+  </div>
+  <div class="callout">
+    <strong>Check before we write a line: the "built during the event" rule</strong>
+    <p>The rules say "Your project must be built during the official hackathon time slot." We should ask the organisers at the help desk whether bringing our own earlier code counts against us. Until they say yes, we start a new public repo and rebuild Postura's patterns from scratch, without copying files. Either way, nothing from Postura's <code>.env</code> or <code>data/keys/</code> goes anywhere near the new repo.</p>
+  </div>
+</section>
+
+<section id="doubt">
+  <span class="eyebrow">The problem we pick</span>
+  <h2>One role, one moment of doubt</h2>
+  <p>The brief asks us to pick one role and one workflow. We take the story SD Worx wrote themselves. A <b>payroll consultant</b> gets an urgent client question. Search turns up three documents and a Teams message. Each one is plausible and each has a different problem, so the consultant cannot act.</p>
+  <figure>
+    <div class="fig-wrap">
+      <svg viewBox="0 0 900 290" role="img" aria-label="A client question returns four search hits: a current Belgian policy, an unowned 2023 FAQ, a Netherlands-only guide, and a Teams message that contradicts the policy. The consultant has four hits and no confidence.">
+        <defs><marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="m"/></marker></defs>
+        <rect class="n n-acc" x="10" y="105" width="230" height="80" rx="10"/>
+        <text class="tk" x="26" y="130">CLIENT QUESTION</text>
+        <text class="t" x="26" y="152">Can Brouwer reimburse</text>
+        <text class="t" x="26" y="170">home-office kit in Belgium?</text>
+
+        <line class="e" x1="240" y1="145" x2="356" y2="37" marker-end="url(#a1)"/>
+        <line class="e" x1="240" y1="145" x2="356" y2="109" marker-end="url(#a1)"/>
+        <line class="e" x1="240" y1="145" x2="356" y2="181" marker-end="url(#a1)"/>
+        <line class="e" x1="240" y1="145" x2="356" y2="253" marker-end="url(#a1)"/>
+
+        <rect class="n" x="360" y="10" width="300" height="54" rx="8"/>
+        <text class="t tb" x="376" y="33">BE telework policy v3</text><text class="t ts" x="376" y="51">Updated 12 Aug 2026</text>
+        <rect class="n n-ok" x="560" y="26" width="88" height="22" rx="11"/><text class="t ts t-ok" x="604" y="41" text-anchor="middle">current</text>
+
+        <rect class="n" x="360" y="82" width="300" height="54" rx="8"/>
+        <text class="t tb" x="376" y="105">Home-office FAQ</text><text class="t ts" x="376" y="123">Last edited 2023</text>
+        <rect class="n n-warn" x="560" y="98" width="88" height="22" rx="11"/><text class="t ts t-warn" x="604" y="113" text-anchor="middle">no owner</text>
+
+        <rect class="n" x="360" y="154" width="300" height="54" rx="8"/>
+        <text class="t tb" x="376" y="177">NL allowance guide</text><text class="t ts" x="376" y="195">Netherlands only</text>
+        <rect class="n n-warn" x="560" y="170" width="88" height="22" rx="11"/><text class="t ts t-warn" x="604" y="185" text-anchor="middle">wrong country</text>
+
+        <rect class="n" x="360" y="226" width="300" height="54" rx="8"/>
+        <text class="t tb" x="376" y="249">Teams, #payroll-be</text><text class="t ts" x="376" y="267">Colleague, 3 days ago</text>
+        <rect class="n n-bad" x="560" y="242" width="88" height="22" rx="11"/><text class="t ts t-bad" x="604" y="257" text-anchor="middle">contradicts</text>
+
+        <line class="e" x1="660" y1="37" x2="736" y2="138" marker-end="url(#a1)"/>
+        <line class="e" x1="660" y1="109" x2="736" y2="142" marker-end="url(#a1)"/>
+        <line class="e" x1="660" y1="181" x2="736" y2="148" marker-end="url(#a1)"/>
+        <line class="e" x1="660" y1="253" x2="736" y2="152" marker-end="url(#a1)"/>
+
+        <rect class="n n-soft" x="740" y="100" width="150" height="90" rx="10"/>
+        <text class="tk" x="756" y="125">CONSULTANT</text>
+        <text class="t" x="756" y="147">4 hits.</text>
+        <text class="t" x="756" y="165">Which one can</text>
+        <text class="t" x="756" y="183">I send?</text>
+      </svg>
+    </div>
+    <figcaption>Today: search finds the information but gives no confidence. The labels on each hit (current, no owner, wrong country, contradicts) are what our product computes and shows. Fictional demo data.</figcaption>
+  </figure>
+</section>
+
+<section id="engine">
+  <span class="eyebrow">How Postura transfers</span>
+  <h2>Same engine, new subject</h2>
+  <p>Postura runs a six-stage pipeline. Four stages carry over almost unchanged. The data model is new, and the connectors and LLM step change shape. The one Postura rule we keep as-is is the one that matters most here: <b>rules decide, the LLM only writes</b>. In Postura the LLM never sets a control mapping. In Postura Knowledge it never decides whether a source is trustworthy. It drafts wording only from claims the rules have already cleared.</p>
+  <figure>
+    <div class="fig-wrap">
+      <svg viewBox="0 0 980 320" role="img" aria-label="Postura's pipeline collect, model, check, flag, explain, prove shown above the proposed SD Worx pipeline. Check, flag and prove are reused; collect and explain are adapted; the model is new.">
+        <defs><marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="m"/></marker></defs>
+        <g text-anchor="middle">
+          <text class="tk" x="80" y="16">COLLECT</text><text class="tk" x="244" y="16">MODEL</text><text class="tk" x="408" y="16">CHECK</text><text class="tk" x="572" y="16">FLAG</text><text class="tk" x="736" y="16">EXPLAIN</text><text class="tk" x="900" y="16">PROVE</text>
+        </g>
+        <text class="t tb t-muted" x="10" y="42" style="fill:var(--muted)">Postura today (cyber compliance)</text>
+        <g>
+          <rect class="n n-soft" x="10" y="52" width="140" height="76" rx="8"/><text class="t" x="22" y="78">Keycloak users,</text><text class="t" x="22" y="95">cloud inventory</text>
+          <rect class="n n-soft" x="174" y="52" width="140" height="76" rx="8"/><text class="t" x="186" y="78">Users, roles,</text><text class="t" x="186" y="95">workloads, data</text>
+          <rect class="n n-soft" x="338" y="52" width="140" height="76" rx="8"/><text class="t" x="350" y="78">YAML Cypher</text><text class="t" x="350" y="95">control rules</text>
+          <rect class="n n-soft" x="502" y="52" width="140" height="76" rx="8"/><text class="t" x="514" y="78">Control gaps</text><text class="t" x="514" y="95">across 6 frameworks</text>
+          <rect class="n n-soft" x="666" y="52" width="140" height="76" rx="8"/><text class="t" x="678" y="78">LLM explains a</text><text class="t" x="678" y="95">finding. Never</text><text class="t" x="678" y="112">decides.</text>
+          <rect class="n n-soft" x="830" y="52" width="140" height="76" rx="8"/><text class="t" x="842" y="78">Ed25519-signed</text><text class="t" x="842" y="95">evidence pack</text>
+        </g>
+        <g>
+          <line class="e" x1="150" y1="90" x2="172" y2="90" marker-end="url(#a2)"/><line class="e" x1="314" y1="90" x2="336" y2="90" marker-end="url(#a2)"/><line class="e" x1="478" y1="90" x2="500" y2="90" marker-end="url(#a2)"/><line class="e" x1="642" y1="90" x2="664" y2="90" marker-end="url(#a2)"/><line class="e" x1="806" y1="90" x2="828" y2="90" marker-end="url(#a2)"/>
+        </g>
+        <g>
+          <line class="e e-dash" x1="80" y1="128" x2="80" y2="222"/><line class="e e-dash" x1="244" y1="128" x2="244" y2="222"/><line class="e e-dash" x1="408" y1="128" x2="408" y2="222"/><line class="e e-dash" x1="572" y1="128" x2="572" y2="222"/><line class="e e-dash" x1="736" y1="128" x2="736" y2="222"/><line class="e e-dash" x1="900" y1="128" x2="900" y2="222"/>
+          <rect class="n n-warn" x="38" y="163" width="84" height="24" rx="12"/><text class="t ts t-warn" x="80" y="179" text-anchor="middle">adapt</text>
+          <rect class="n n-acc" x="202" y="163" width="84" height="24" rx="12"/><text class="t ts t-acc" x="244" y="179" text-anchor="middle">new</text>
+          <rect class="n n-ok" x="366" y="163" width="84" height="24" rx="12"/><text class="t ts t-ok" x="408" y="179" text-anchor="middle">reuse</text>
+          <rect class="n n-ok" x="530" y="163" width="84" height="24" rx="12"/><text class="t ts t-ok" x="572" y="179" text-anchor="middle">reuse</text>
+          <rect class="n n-warn" x="694" y="163" width="84" height="24" rx="12"/><text class="t ts t-warn" x="736" y="179" text-anchor="middle">adapt</text>
+          <rect class="n n-ok" x="858" y="163" width="84" height="24" rx="12"/><text class="t ts t-ok" x="900" y="179" text-anchor="middle">reuse</text>
+        </g>
+        <text class="t tb" x="10" y="214" style="fill:var(--accent)">Postura Knowledge (SD Worx)</text>
+        <g>
+          <rect class="n n-acc" x="10" y="224" width="140" height="80" rx="8"/><text class="t" x="22" y="250">Policies, Teams</text><text class="t" x="22" y="267">export, expert list</text>
+          <rect class="n n-acc" x="174" y="224" width="140" height="80" rx="8"/><text class="t" x="186" y="250">Sources, claims,</text><text class="t" x="186" y="267">owners, countries</text>
+          <rect class="n n-acc" x="338" y="224" width="140" height="80" rx="8"/><text class="t" x="350" y="250">YAML trust rules</text><text class="t" x="350" y="267">(same engine)</text>
+          <rect class="n n-acc" x="502" y="224" width="140" height="80" rx="8"/><text class="t" x="514" y="250">Trust issues on</text><text class="t" x="514" y="267">sources + answers</text>
+          <rect class="n n-acc" x="666" y="224" width="140" height="80" rx="8"/><text class="t" x="678" y="250">LLM drafts from</text><text class="t" x="678" y="267">cleared claims only.</text><text class="t" x="678" y="284">Never judges.</text>
+          <rect class="n n-acc" x="830" y="224" width="140" height="80" rx="8"/><text class="t" x="842" y="250">Signed answer</text><text class="t" x="842" y="267">receipt</text>
+        </g>
+        <g>
+          <line class="e" x1="150" y1="264" x2="172" y2="264" marker-end="url(#a2)"/><line class="e" x1="314" y1="264" x2="336" y2="264" marker-end="url(#a2)"/><line class="e" x1="478" y1="264" x2="500" y2="264" marker-end="url(#a2)"/><line class="e" x1="642" y1="264" x2="664" y2="264" marker-end="url(#a2)"/><line class="e" x1="806" y1="264" x2="828" y2="264" marker-end="url(#a2)"/>
+        </g>
+      </svg>
+    </div>
+    <figcaption>Top row: what Postura does today. Bottom row: the SD Worx version. The chip on each column shows how much of that stage carries over. "Reuse" means the same design and roughly the same code shape; "new" means we design it today.</figcaption>
+  </figure>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Postura concept</th><th>Becomes in Postura Knowledge</th><th>Why it matters for SD Worx</th></tr></thead>
+    <tbody>
+      <tr><td>Read-only collector</td><td>Read-only connector per knowledge source</td><td>We never edit a policy. We only observe it and flag issues.</td></tr>
+      <tr><td>User, role, data store nodes</td><td>Source, Claim, Owner, Topic, Country nodes</td><td>Lets us ask "what does this rule say, for which country, according to whom?"</td></tr>
+      <tr><td>Control rule (YAML + Cypher)</td><td>Trust rule (YAML + Cypher)</td><td>Trust becomes a visible, versioned, auditable check. No black box.</td></tr>
+      <tr><td>"Test once, comply many" (one finding maps to many frameworks)</td><td>"Flag once, fix every answer" (one issue marks every answer that cites it)</td><td>Fixing one outdated source repairs every answer that depends on it.</td></tr>
+      <tr><td>Framework filter (ISO, NIS2, GDPR…)</td><td>Context filter (country, legal entity, date)</td><td>Answers the brief's question "what applies in this context?"</td></tr>
+      <tr><td>Posture score per framework</td><td>Trust score per topic and country</td><td>Owners see where knowledge is weak before a client asks.</td></tr>
+      <tr><td>Exposure path (identity → role → database → internet)</td><td>Trust path (answer → claim → source → owner → last review)</td><td>Every answer can be traced back to a person and a date.</td></tr>
+      <tr><td>Signed evidence pack for auditors</td><td>Signed answer receipt</td><td>If a payroll answer is challenged months later, we can prove what the consultant saw at the time.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="experience">
+  <span class="eyebrow">What the consultant sees</span>
+  <h2>From "I found something" to "I know why I can rely on it"</h2>
+  <p>The main screen answers the question and shows its trust status in the same view. It lists the sources it used and the sources it left out, with a plain reason for each, and names the person to ask when documents are not enough.</p>
+  <div class="mock" role="img" aria-label="Mock-up of the Ask screen with an answer, a caution banner, used and excluded sources, the topic owner and a signed receipt">
+    <div class="mock-bar">
+      <b>Ask</b>
+      <span class="ctx"><span>Client</span> Brouwer Logistics</span>
+      <span class="ctx"><span>Country</span> Belgium</span>
+      <span class="ctx"><span>Effective</span> 30 Sep 2026</span>
+    </div>
+    <div class="mock-body">
+      <div class="mock-main">
+        <div class="q">Can this client reimburse home-office equipment tax-free?</div>
+        <div class="banner"><span><b>Use with care: 1 open conflict.</b> A Teams message states a different cap. The topic owner has been asked to confirm.</span></div>
+        <div class="answer">Yes, up to €150 per month, provided the employee works from home on a structural basis.<sup class="cite">[1]</sup></div>
+        <div class="src-list">
+          <div class="src"><div class="src-h"><b>[1] BE telework policy v3</b><span class="tag ok">used</span></div><q>…the monthly allowance may not exceed €150 for structural home workers…</q><span class="muted">p.3 §2.1 · Owner Lies V. · reviewed 12 Aug 2026</span></div>
+          <div class="src"><div class="src-h"><b>Home-office FAQ (2023)</b><span class="tag warn">left out</span></div><span class="muted">Older than policy v3 and has no owner.</span></div>
+          <div class="src"><div class="src-h"><b>NL allowance guide</b><span class="tag warn">left out</span></div><span class="muted">Applies to the Netherlands, not Belgium.</span></div>
+          <div class="src"><div class="src-h"><b>Teams, #payroll-be</b><span class="tag bad">conflict</span></div><q>…I think the cap is €130 now…</q><span class="muted">Not backed by any document. Sent to Lies V. for review.</span></div>
+        </div>
+      </div>
+      <div class="mock-side">
+        <div class="side-h">Ask a person</div>
+        <div class="person"><span class="avatar">LV</span><span><b>Lies V.</b><br><span class="muted">Owner, BE payroll policy · 14 answers on this topic</span></span></div>
+        <div class="side-h">Topic trust</div>
+        <div class="stack" style="gap:6px;font-size:.88rem">
+          <span>Telework, Belgium <span class="tag warn">72</span></span>
+          <span class="muted">1 conflict · 1 source without owner · 1 expert only</span>
+        </div>
+        <div class="actions"><span class="btn primary">Copy with citations</span><span class="btn">Request review</span></div>
+        <div class="receipt">Receipt R-0930-0142 · Ed25519 signed · 3 sources at recorded versions</div>
+      </div>
+    </div>
+    <div class="demo-note">Mock-up with fictional names, amounts and documents. None of it is real SD Worx policy.</div>
+  </div>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Screen</th><th>Who</th><th>What it does</th><th>Postura screen it grows from</th></tr></thead>
+    <tbody>
+      <tr><td><b>Ask</b></td><td>Consultant</td><td>Asks within a context (client, country, date). Gets an answer with its trust status, used and left-out sources, the person to ask, and a signed receipt.</td><td>Finding drawer + AI explanation card</td></tr>
+      <tr><td><b>Trust map</b></td><td>Knowledge owner</td><td>A graph of topics, sources and owners, coloured by trust. Shows the trust score per country and the open issues.</td><td>Graph view + posture score</td></tr>
+      <tr><td><b>Owner review</b></td><td>Knowledge owner</td><td>Shows conflicting claims side by side with the answers they affect. The owner picks one value and records why. Affected answers turn green straight away.</td><td>Findings list + resolve lifecycle</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="rules">
+  <span class="eyebrow">The core idea</span>
+  <h2>Trust rules: deterministic, versioned, explainable</h2>
+  <p>Each rule is a small YAML file with a Cypher query, written in the same format as Postura's <code>controls/rules.yaml</code>. A rule turns a vague feeling ("I'm not sure about this doc") into a named, visible reason ("no owner, last reviewed 2023"). Because rules are code, SD Worx can review them, change them and audit them.</p>
+<pre><span class="c"># rules/trust.yaml, same shape as Postura's control rules</span>
+- <span class="k">id:</span> claims-conflict
+  <span class="k">severity:</span> high
+  <span class="k">observation_summary:</span> "Two sources state different values for the same rule, country and period"
+  <span class="k">remediation:</span> "Ask the topic owner to confirm one value and record the reason."
+  <span class="k">cypher:</span> |
+    MATCH (a:Claim)-[:ABOUT]->(t:Topic)&lt;-[:ABOUT]-(b:Claim)
+    WHERE a.country = b.country AND a.period = b.period
+      AND a.value &lt;&gt; b.value AND a.id &lt; b.id
+    RETURN a.id AS id, b.id AS other, 'Claim' AS type
+  <span class="k">affects:</span> answers_citing   <span class="c"># Postura's "satisfies" becomes "affects"</span></pre>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Rule</th><th>Fires when</th><th>Effect</th><th>Brief area</th></tr></thead>
+    <tbody>
+      <tr><td><code>context-mismatch</code></td><td>The source's country, entity or date does not match the question</td><td><span class="tag warn">left out</span> with the reason shown</td><td>Trust</td></tr>
+      <tr><td><code>superseded-version</code></td><td>A newer version of the same document exists</td><td><span class="tag warn">left out</span></td><td>Trust</td></tr>
+      <tr><td><code>source-no-owner</code></td><td>Nobody is named as owner</td><td><span class="tag warn">medium</span> lowers trust</td><td>Trust</td></tr>
+      <tr><td><code>review-overdue</code></td><td>No review in 12 months, or the last review predates a rule change</td><td><span class="tag bad">high</span></td><td>Trust</td></tr>
+      <tr><td><code>claims-conflict</code></td><td>Two claims disagree for the same topic, country and period</td><td><span class="tag bad">high</span> review task for the owner</td><td>Detect</td></tr>
+      <tr><td><code>duplicate-claim</code></td><td>The same claim appears in several sources with different owners</td><td><span class="tag warn">low</span></td><td>Detect</td></tr>
+      <tr><td><code>chat-only-knowledge</code></td><td>A claim exists only in chat, never in a document</td><td><span class="tag warn">medium</span> suggests capturing it</td><td>Capture</td></tr>
+      <tr><td><code>single-expert</code></td><td>Only one person owns or answers a topic</td><td><span class="tag warn">medium</span> shown on the Trust map</td><td>Connect</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted">Together the rules cover all four inspiration areas in the brief (Trust, Capture, Detect, Connect). When no cleared claim exists, the answer says so and points to the owner instead of guessing.</p>
+</section>
+
+<section id="path">
+  <span class="eyebrow">Postura's exposure path, repurposed</span>
+  <h2>The trust path behind one answer</h2>
+  <p>Postura lights up the chain from a weak identity to exposed data. Here the same traversal walks from an answer back to the people who stand behind it. It also shows the branch that was held back and which rule held it back.</p>
+  <figure>
+    <div class="fig-wrap">
+      <svg viewBox="0 0 1000 290" role="img" aria-label="The answer cites a claim from the Belgian policy v3, owned by Lies and reviewed in August 2026. A contradicting claim from a Teams message with no owner is held back by the claims-conflict rule.">
+        <defs>
+          <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="m"/></marker>
+          <marker id="a3b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="m-bad"/></marker>
+        </defs>
+        <rect class="n n-acc" x="10" y="119" width="160" height="52" rx="8"/><text class="tk" x="24" y="140">QUESTION</text><text class="t" x="24" y="159">home-office kit, BE</text>
+        <rect class="n" x="210" y="119" width="160" height="52" rx="8"/><text class="tk" x="224" y="140">ANSWER</text><text class="t" x="224" y="159">cap €150 / month</text>
+        <line class="e" x1="170" y1="145" x2="208" y2="145" marker-end="url(#a3)"/>
+
+        <rect class="n n-ok" x="410" y="36" width="160" height="52" rx="8"/><text class="tk" x="424" y="57">CLAIM</text><text class="t" x="424" y="76">cap €150 / month</text>
+        <rect class="n n-bad" x="410" y="202" width="160" height="52" rx="8"/><text class="tk" x="424" y="223">CLAIM</text><text class="t" x="424" y="242">cap €130 / month</text>
+        <line class="e" x1="370" y1="135" x2="408" y2="70" marker-end="url(#a3)"/>
+        <text class="t ts" x="382" y="96" text-anchor="end">cites</text>
+        <line class="e e-bad e-dash" x1="370" y1="155" x2="408" y2="220" marker-end="url(#a3b)"/>
+        <text class="t ts t-bad" x="384" y="206" text-anchor="end">held back</text>
+
+        <line class="e e-bad" x1="490" y1="90" x2="490" y2="200" marker-start="url(#a3b)" marker-end="url(#a3b)"/>
+        <text class="t ts t-bad tb" x="502" y="140">contradicts</text>
+        <text class="t ts" x="502" y="157" style="font-family:var(--mono);font-size:10.5px">rule: claims-conflict</text>
+
+        <rect class="n" x="620" y="36" width="160" height="52" rx="8"/><text class="t tb" x="634" y="58">BE policy v3</text><text class="t ts" x="634" y="76">quote on p.3, §2.1</text>
+        <rect class="n" x="620" y="202" width="160" height="52" rx="8"/><text class="t tb" x="634" y="224">Teams message</text><text class="t ts" x="634" y="242">no document behind it</text>
+        <line class="e" x1="570" y1="62" x2="618" y2="62" marker-end="url(#a3)"/>
+        <line class="e" x1="570" y1="228" x2="618" y2="228" marker-end="url(#a3)"/>
+
+        <rect class="n n-ok" x="830" y="36" width="160" height="52" rx="8"/><text class="t tb" x="844" y="58">Owner: Lies V.</text><text class="t ts" x="844" y="76">reviewed Aug 2026</text>
+        <rect class="n n-warn" x="830" y="202" width="160" height="52" rx="8"/><text class="t tb" x="844" y="224">No owner</text><text class="t ts" x="844" y="242">never reviewed</text>
+        <line class="e" x1="780" y1="62" x2="828" y2="62" marker-end="url(#a3)"/>
+        <text class="t ts" x="804" y="30" text-anchor="middle">owned by</text>
+        <line class="e" x1="780" y1="228" x2="828" y2="228" marker-end="url(#a3)"/>
+      </svg>
+    </div>
+    <figcaption>Top branch: the answer rests on a quoted claim, a versioned document and a named owner who reviewed it recently. Bottom branch: the conflicting chat claim is held back and sent for review. When Lies resolves the conflict, the rule stops firing and the answer's banner turns green.</figcaption>
+  </figure>
+  <p>The same graph also answers the reverse question. If BE policy v3 changes tomorrow, which answers, consultants and clients are affected? One query returns them, and their receipts show exactly which version they relied on.</p>
+</section>
+
+<section id="build">
+  <span class="eyebrow">Hackathon architecture</span>
+  <h2>Lean build, with security designed in</h2>
+  <p>Security is 10% of the score, and Aikido specifically checks IDOR and authorization. Postura never needed either, since it ran as a single admin user. So this is the one area that is new work, and we put it in the request path itself. Every query is limited to what the signed-in user may see <b>before</b> retrieval runs. Nothing the user may not see ever reaches the LLM prompt or the answer.</p>
+  <figure>
+    <div class="fig-wrap">
+      <svg viewBox="0 0 960 440" role="img" aria-label="Layered architecture: three read-only sources feed claim extraction, then a store and a trust rules engine, then an answer API whose second step is a scope filter before retrieval, then three screens.">
+        <defs>
+          <marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="m"/></marker>
+        </defs>
+        <g>
+          <text class="tk" x="10" y="42">SOURCES</text><text class="tk" x="10" y="133">INGEST</text><text class="tk" x="10" y="223">STORE + CHECK</text><text class="tk" x="10" y="317">ANSWER API</text><text class="tk" x="10" y="410">SCREENS</text>
+        </g>
+        <rect class="n n-soft" x="150" y="10" width="250" height="56" rx="8"/><text class="t tb" x="166" y="34">Policy docs</text><text class="t ts" x="166" y="52">markdown / pdf, versioned</text>
+        <rect class="n n-soft" x="425" y="10" width="250" height="56" rx="8"/><text class="t tb" x="441" y="34">Teams export</text><text class="t ts" x="441" y="52">json, fictional threads</text>
+        <rect class="n n-soft" x="700" y="10" width="250" height="56" rx="8"/><text class="t tb" x="716" y="34">Expert directory</text><text class="t ts" x="716" y="52">owners, topics, countries</text>
+        <line class="e" x1="275" y1="66" x2="275" y2="98" marker-end="url(#a4)"/><line class="e" x1="550" y1="66" x2="550" y2="98" marker-end="url(#a4)"/><line class="e" x1="825" y1="66" x2="825" y2="98" marker-end="url(#a4)"/>
+        <text class="t ts" x="560" y="86">read-only</text>
+
+        <rect class="n" x="150" y="100" width="800" height="56" rx="8"/>
+        <text class="t tb" x="166" y="124">Claim extraction</text>
+        <text class="t ts" x="166" y="143">LLM proposes claims. Each keeps its exact quote, source version, country and owner. A quote that doesn't match the text is rejected.</text>
+        <line class="e" x1="345" y1="156" x2="345" y2="188" marker-end="url(#a4)"/>
+
+        <rect class="n" x="150" y="190" width="390" height="56" rx="8"/><text class="t tb" x="166" y="214">Neo4j + Postgres</text><text class="t ts" x="166" y="233">graph · claims · access lists · receipts · audit log</text>
+        <rect class="n" x="560" y="190" width="390" height="56" rx="8"/><text class="t tb" x="576" y="214">Trust rules engine</text><text class="t ts" x="576" y="233">YAML + Cypher, runs after every ingest</text>
+        <line class="e" x1="540" y1="218" x2="558" y2="218" marker-end="url(#a4)" marker-start="url(#a4)"/>
+        <line class="e" x1="550" y1="246" x2="550" y2="278" marker-end="url(#a4)"/>
+
+        <g>
+          <rect class="n" x="150" y="280" width="118" height="64" rx="8"/><text class="t tb" x="209" y="308" text-anchor="middle">Sign in</text><text class="t ts" x="209" y="326" text-anchor="middle">session, role</text>
+          <rect class="n n-acc" x="286" y="280" width="118" height="64" rx="8" style="stroke-width:2"/><text class="t tb t-acc" x="345" y="308" text-anchor="middle">Scope filter</text><text class="t ts" x="345" y="326" text-anchor="middle">before retrieval</text>
+          <rect class="n" x="422" y="280" width="118" height="64" rx="8"/><text class="t tb" x="481" y="308" text-anchor="middle">Retrieve</text><text class="t ts" x="481" y="326" text-anchor="middle">claims in context</text>
+          <rect class="n" x="558" y="280" width="118" height="64" rx="8"/><text class="t tb" x="617" y="308" text-anchor="middle">Trust status</text><text class="t ts" x="617" y="326" text-anchor="middle">from rules</text>
+          <rect class="n" x="694" y="280" width="118" height="64" rx="8"/><text class="t tb" x="753" y="308" text-anchor="middle">Draft</text><text class="t ts" x="753" y="326" text-anchor="middle">LLM, cleared only</text>
+          <rect class="n" x="830" y="280" width="118" height="64" rx="8"/><text class="t tb" x="889" y="308" text-anchor="middle">Sign receipt</text><text class="t ts" x="889" y="326" text-anchor="middle">Ed25519</text>
+          <line class="e" x1="268" y1="312" x2="284" y2="312" marker-end="url(#a4)"/><line class="e" x1="404" y1="312" x2="420" y2="312" marker-end="url(#a4)"/><line class="e" x1="540" y1="312" x2="556" y2="312" marker-end="url(#a4)"/><line class="e" x1="676" y1="312" x2="692" y2="312" marker-end="url(#a4)"/><line class="e" x1="812" y1="312" x2="828" y2="312" marker-end="url(#a4)"/>
+        </g>
+        <line class="e" x1="550" y1="344" x2="550" y2="376" marker-end="url(#a4)"/>
+
+        <rect class="n n-soft" x="150" y="378" width="250" height="52" rx="8"/><text class="t tb" x="275" y="409" text-anchor="middle">Ask</text>
+        <rect class="n n-soft" x="425" y="378" width="250" height="52" rx="8"/><text class="t tb" x="550" y="409" text-anchor="middle">Trust map</text>
+        <rect class="n n-soft" x="700" y="378" width="250" height="52" rx="8"/><text class="t tb" x="825" y="409" text-anchor="middle">Owner review</text>
+      </svg>
+    </div>
+    <figcaption>The highlighted step is the security decision. Access rules are applied inside the query itself, not after the results come back. Record IDs in the API (answers, receipts, reviews) are always checked against the signed-in user's scope, which is exactly the IDOR case Aikido tests.</figcaption>
+  </figure>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Layer</th><th>Choice</th><th>Reason</th></tr></thead>
+    <tbody>
+      <tr><td>Backend</td><td>Python 3.12 + FastAPI</td><td>Same as Postura, so the team already knows it</td></tr>
+      <tr><td>Graph + store</td><td>Neo4j Community + Postgres</td><td>Trust rules run as Cypher, the same way Postura's control rules do</td></tr>
+      <tr><td>Frontend</td><td>React + Vite + Tailwind + shadcn/ui + Cytoscape.js</td><td>Rebuilds Postura's graph look quickly</td></tr>
+      <tr><td>LLM</td><td>Claude via one swappable client</td><td>Claim extraction and answer drafting. Sees only cleared, in-scope claims</td></tr>
+      <tr><td>Auth</td><td>Three demo users (consultant BE, consultant NL, owner) with server-side sessions</td><td>Shows scoping live: the NL consultant cannot see BE-only sources</td></tr>
+      <tr><td>Hosting</td><td>Google Cloud Run (event credits)</td><td>Judges get a live link. Postura's marketing site already has a Cloud Run config to learn from</td></tr>
+      <tr><td>Security check</td><td>Aikido AI Code Audit: baseline, fix, rescan</td><td>Required for the submission. Screenshots before and after</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="reuse">
+  <span class="eyebrow">What we carry over from Postura</span>
+  <h2>Concrete reuse list</h2>
+  <p>These are the pieces of Postura I read and would rebuild from. "Port" means we write it fresh today following the same design, unless the organisers confirm that reusing code is allowed.</p>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Postura piece</th><th>Where it lives</th><th>Use in Postura Knowledge</th></tr></thead>
+    <tbody>
+      <tr><td>Rule engine: run every rule, upsert findings, resolve orphans, compute status per node</td><td><code>services/mapper/engine.py</code>, <code>rules.py</code></td><td>Trust rules engine, almost one-to-one (~150 lines)</td></tr>
+      <tr><td>YAML rule format with <code>cypher</code> and <code>satisfies</code></td><td><code>controls/rules.yaml</code></td><td>Trust rule format, with <code>satisfies</code> becoming <code>affects</code></td></tr>
+      <tr><td>Finding lifecycle (first seen, last verified, resolved)</td><td><code>services/mapper/findings_store.py</code></td><td>Trust issues open and close as owners resolve them</td></tr>
+      <tr><td>Exposure-path traversal</td><td><code>services/api/graph_store.py</code> <code>fetch_exposure_path</code></td><td>Trust path and blast-radius queries</td></tr>
+      <tr><td>LLM client with provider swap and a safe-field allowlist</td><td><code>services/api/llm_client.py</code>, <code>explanation_writer.py</code></td><td>The allowlist becomes "only cleared, in-scope claims reach the prompt"</td></tr>
+      <tr><td>Ed25519 signing and verify endpoint</td><td><code>services/api/crypto_helpers.py</code>, <code>evidence_pack.py</code></td><td>Signed answer receipts and a "verify receipt" check</td></tr>
+      <tr><td>Graph UI, node drawer, design system</td><td><code>services/ui/src/components/graph/</code>, <code>documents/08-DESIGN-SYSTEM.md</code></td><td>Trust map and the source drawer</td></tr>
+      <tr><td>Scenarios and fast demo reset</td><td><code>seed/scenarios/</code>, <code>scripts/demo-reset.sh</code></td><td>Reliable demo: reset to "conflict open" in seconds</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted">We leave behind the Keycloak collector, the cloud collector, the six security frameworks, regulator timelines and breach notification drafts. They belong to the cyber use case.</p>
+</section>
+
+<section id="fit">
+  <span class="eyebrow">Judging</span>
+  <h2>How this scores</h2>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Criterion</th><th>Weight</th><th>Our case</th></tr></thead>
+    <tbody>
+      <tr><td>Creativity</td><td class="num">30%</td><td>"Knowledge posture": we treat organisational knowledge like a security estate, with continuous checks, a trust score and signed receipts. Most teams will build a chatbot with citations.</td></tr>
+      <tr><td>Technical ability</td><td class="num">30%</td><td>A working graph, a rules engine, scoped retrieval, signed receipts, and a live resolve loop in which the owner fixes the issue and the answer turns green.</td></tr>
+      <tr><td>Fit to challenge</td><td class="num">30%</td><td>Built on SD Worx's own story. Answers all six questions in the brief (below) and covers all four inspiration areas.</td></tr>
+      <tr><td>Security</td><td class="num">10%</td><td>Scope filter before retrieval, ID checks on every endpoint, no secrets in the repo, and an Aikido baseline, fix and rescan.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>SD Worx's question</th><th>Where the product answers it</th></tr></thead>
+    <tbody>
+      <tr><td>What is reliable?</td><td>Owner and review status on every source; trust verdict on every answer</td></tr>
+      <tr><td>What is current?</td><td>Version tracking; <code>superseded-version</code> and <code>review-overdue</code> rules</td></tr>
+      <tr><td>What applies in this context?</td><td>Context bar (client, country, date); <code>context-mismatch</code> excludes the rest, with reasons</td></tr>
+      <tr><td>Where are the gaps?</td><td>Trust map: trust score per topic and country, plus chat-only knowledge</td></tr>
+      <tr><td>Who has relevant expertise?</td><td>"Ask a person" panel; <code>single-expert</code> warning</td></tr>
+      <tr><td>Which answer should a person trust?</td><td>The trust path, and the signed receipt that records it</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="plan">
+  <span class="eyebrow">Scope for today</span>
+  <h2>What we build, in order</h2>
+  <div class="slices">
+    <div><span class="tag ok">Must: the demo works</span><ul>
+      <li>Fictional corpus: 1 topic, 2 countries, about 8 sources, plus a Teams export</li>
+      <li>Ingest with claim extraction and quote checking</li>
+      <li>Five trust rules: context, superseded, no owner, overdue, conflict</li>
+      <li>Ask screen with verdict, sources and receipt</li>
+      <li>Owner review resolves the conflict and the answer turns green</li>
+      <li>Scoped access for three demo users</li>
+    </ul></div>
+    <div><span class="tag acc">Should: the wow</span><ul>
+      <li>Trust map graph with trust score per country</li>
+      <li>Blast radius: "this change affects 7 answers"</li>
+      <li>Receipt verify page</li>
+      <li>Remaining rules: chat-only, single expert, duplicates</li>
+      <li>Deploy to Cloud Run</li>
+    </ul></div>
+    <div><span class="tag warn">Won't: out of scope</span><ul>
+      <li>Real SharePoint, Teams or HR connectors</li>
+      <li>More topics or languages</li>
+      <li>Voice (ElevenLabs), only if time is left over</li>
+      <li>Editing source documents (read-only, as in Postura)</li>
+    </ul></div>
+  </div>
+  <h3>Demo video (under 3 minutes)</h3>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Time</th><th>Beat</th></tr></thead>
+    <tbody>
+      <tr><td class="num">0:00</td><td>The client question arrives. Plain search shows four hits and no confidence (figure 1).</td></tr>
+      <tr><td class="num">0:25</td><td>Same question in Postura Knowledge: an answer with the caution banner, used and left-out sources with reasons, and who to ask.</td></tr>
+      <tr><td class="num">1:05</td><td>Open the trust path: owner, version and review date. Then the held-back Teams claim and the rule that caught it.</td></tr>
+      <tr><td class="num">1:35</td><td>Switch to the NL consultant: BE-only sources are not visible to them. That's scoped access, shown live.</td></tr>
+      <tr><td class="num">1:55</td><td>The owner opens the review, confirms €150, and records why. The banner turns green and the trust score rises.</td></tr>
+      <tr><td class="num">2:30</td><td>Verify the signed receipt. Close line: "From I found something to I know why I can rely on it."</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="decide">
+  <span class="eyebrow">Your call</span>
+  <h2>Decisions before we build</h2>
+  <ol class="decide">
+    <li><b>Code reuse rule.</b> Ask the organisers whether reusing earlier Postura code is allowed. If not, we port the patterns into a new repo. I recommend the new repo either way; it's cleaner for Aikido too.</li>
+    <li><b>Persona and topic.</b> My recommendation is a payroll consultant and a home-office allowance question across Belgium and the Netherlands. It mirrors the brief's own story.</li>
+    <li><b>Name.</b> "Postura Knowledge" ties the entry to your product. A neutral name also works if you'd rather keep Postura separate.</li>
+    <li><b>Time and team.</b> How many hours are left and how many builders we have decides whether the "Should" column fits.</li>
+  </ol>
+</section>
+</main>
